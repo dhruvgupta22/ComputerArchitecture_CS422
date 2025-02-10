@@ -1,13 +1,3 @@
-/*
- * Copyright (C) 2007-2023 Intel Corporation.
- * SPDX-License-Identifier: MIT
- */
-
-/*! @file
- *  This is an example of the PIN tool that demonstrates some basic PIN APIs 
- *  and could serve as the starting point for developing your first PIN tool
- */
-
  #include "pin.H"
  #include <iostream>
  #include <fstream>
