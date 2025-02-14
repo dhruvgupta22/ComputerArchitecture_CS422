@@ -1,7 +1,8 @@
 #include "pin.H"
 #include <iostream>
 #include <fstream>
-#include <set>
+#include <unordered_set>
+#include <unordered_map>
 using namespace std;
 
 UINT32 fast_forward_count = 0;	// Should be a command line input to your PIN tool
@@ -25,18 +26,18 @@ UINT32 num_sys_calls = 0;
 UINT32 num_flops = 0;
 UINT32 num_others = 0;
 
-std::ostream *out = &cerr;
+ostream *out = &cerr;
 UINT32 total_ins = 0;
 
-set<UINT32> instrAddr;
-set<UINT32> dataAddr;
-map<UINT32, UINT32> insLength; 
-map<UINT32, UINT32> insOp; 
-map<UINT32, UINT32> readReg; 
-map<UINT32, UINT32> writeReg;
-map<UINT32, UINT32> memOp;
-map<UINT32, UINT32> memReadOp;
-map<UINT32, UINT32> memWriteOp;
+unordered_set<UINT32> instrAddr;
+unordered_set<UINT32> dataAddr;
+unordered_map<UINT32, UINT32> insLength; 
+unordered_map<UINT32, UINT32> insOp; 
+unordered_map<UINT32, UINT32> readReg; 
+unordered_map<UINT32, UINT32> writeReg;
+unordered_map<UINT32, UINT32> memOp;
+unordered_map<UINT32, UINT32> memReadOp;
+unordered_map<UINT32, UINT32> memWriteOp;
 UINT32 maxMemBytes = 0;
 UINT32 totalMemBytes = 0;
 INT32 maxImm = INT32_MIN;
@@ -63,6 +64,7 @@ ADDRINT Terminate(void) { return (insCount >= fast_forward_count + 1000000000); 
 
 ADDRINT FastForward (void) { return ((insCount >= fast_forward_count) && (insCount < fast_forward_count + 1000000000)); }
 
+VOID count_insbb(UINT32 x) { insCount += x; }
 VOID count_ins() { insCount++; }
 VOID count_loads(UINT32 x) { num_loads+=x; }
 VOID count_stores(UINT32 x) {num_stores+=x;}
@@ -144,12 +146,12 @@ void PrintRow(const string &name, UINT32 count){
          << setw(14) << fixed << setprecision(6) << percentage << "%" << endl;
 }
 
-void PrintResults(const std::string &title, const std::map<UINT32, UINT32> &data) {
-    *out << title << " Results: " << std::endl;
+void PrintResults(const string &title, const unordered_map<UINT32, UINT32> &data) {
+    *out << title << " Results: " << endl;
     for (const auto &entry : data) {
-        *out << entry.first << " : " << entry.second << std::endl;
+        *out << entry.first << " : " << entry.second << endl;
     }
-    *out << std::endl;
+    *out << endl;
 }
 
 void MyExitRoutine() {
@@ -232,13 +234,22 @@ void MyExitRoutine() {
 	exit(0);
 }
 
+VOID Trace(TRACE trace, VOID *v)
+{
+    for (BBL bbl = TRACE_BblHead(trace); BBL_Valid(bbl); bbl = BBL_Next(bbl)) {
+        BBL_InsertCall(bbl, IPOINT_BEFORE, (AFUNPTR)count_insbb, IARG_UINT32, BBL_NumIns(bbl), IARG_END);
+    }
+}
+
 VOID Instrumentation(INS ins, VOID *v){
     
     INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) Terminate, IARG_END);
     INS_InsertThenCall(ins, IPOINT_BEFORE, MyExitRoutine, IARG_END);
 
-    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)count_ins, IARG_END);
-
+    // INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)count_ins, IARG_END);
+    if(insCount == 1000){
+        cout << "insCount = " << insCount << endl;
+    }
     UINT32 startAddr, endAddr;
     UINT32 insAddr = INS_Address(ins);
     UINT32 insSize = INS_Size(ins);
@@ -401,13 +412,15 @@ int main(int argc, char *argv[])
     
     if (!fileName.empty())
     {
-        out = new std::ofstream(fileName.c_str());
+        out = new ofstream(fileName.c_str());
     }
     
     fast_forward_count = KnobFastForward.Value();
     // printf("ff = %ld\n", fast_forward_count);
     if (KnobCount)
     {
+        TRACE_AddInstrumentFunction(Trace, 0);
+
         // Register Instruction to be called to instrument instructions
         INS_AddInstrumentFunction(Instrumentation, 0);
 
