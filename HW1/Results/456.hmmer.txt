@@ -1,0 +1,92 @@
+============================================================
+Part A Analysis Results: 
+------------------------------------------------------------
+Total Instructions: 265000000003
+Total Instructions after fast forward: 1000000003
+------------------------------------------------------------
+Instruction Type              Count          Percentage     
+------------------------------------------------------------
+Loads                         547670658      33.736683     %
+Stores                        75698724       4.663065      %
+NOPs                          34317          0.002114      %
+Direct Calls                  144622         0.008909      %
+Indirect Calls                959            0.000059      %
+Returns                       145581         0.008968      %
+Unconditional Branches        205862         0.012681      %
+Conditional Branches          144361450      8.892710      %
+Logical Operations            1158704        0.071377      %
+Rotate & Shift                294108         0.018117      %
+Flag Operations               5669           0.000349      %
+Vector Instructions           0              0.000000      %
+Conditional Moves             0              0.000000      %
+MMX & SSE Instructions        0              0.000000      %
+System Calls                  0              0.000000      %
+Floating-Point                40212          0.002477      %
+Others                        853607545      52.582491     %
+============================================================
+Part B Analysis Results: 
+CPI = 27.495826
+============================================================
+Part C Analysis Results: 
+------------------------------------------------------------
+Instruction Footprint Blocks     = 488
+Instruction Footprint (in bytes) = 15616
+Data Footprint Blocks            = 84066
+Data Footprint (in bytes)        = 2690112
+============================================================
+Part D Analysis Results: 
+------------------------------------------------------------
+Instruction Size Results: 
+1 : 25078496
+2 : 302860659
+3 : 296150770
+4 : 270388758
+5 : 24861224
+6 : 68360254
+7 : 416483
+8 : 11883348
+
+Memory Instruction Operand Results: 
+0 : 376808277
+1 : 623024641
+2 : 166111
+
+Memory Instruction Read Operand Results: 
+0 : 75527977
+1 : 547662775
+
+Memory Instruction Write Operand Results: 
+0 : 547496664
+1 : 75694088
+
+Instruction Operand Results: 
+0 : 34887
+1 : 3512
+2 : 566126726
+3 : 432938393
+4 : 713115
+5 : 159551
+6 : 23808
+
+Instruction Register Read Operand Results: 
+0 : 610949
+1 : 75620205
+2 : 562398860
+3 : 281425731
+4 : 79905510
+5 : 14929
+6 : 23808
+
+Instruction Register Write Operand Results: 
+0 : 75149154
+1 : 755280000
+2 : 169547030
+3 : 23808
+
+Maximum number of bytes touched by an instruction : 8
+Average number of bytes touched by an instruction : 3.997511
+Maximum value of immediate : 2147483647
+Minimum value of immediate : -987654321
+Maximum value of displacement used in memory addressing : 135294312
+Minimum value of displacement used in memory addressing : -580
+Time taken : 4496.836324 seconds.
