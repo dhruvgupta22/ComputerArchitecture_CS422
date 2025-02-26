@@ -189,6 +189,9 @@ void MyExitRoutine() {
         if(entry.first > 0) memInsCount += entry.second;
     }
     double avgMemBytes = (memInsCount == 0) ? 0.0 : ((1.0*totalMemBytes) / memInsCount);
+
+    memReadOp[0] = memReadOp[0]-memOp[0];
+    memWriteOp[0] = memWriteOp[0]-memOp[0];
     
     *out << "============================================================" << endl;
     *out << "Part A Analysis Results: " << endl;
