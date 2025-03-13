@@ -20,10 +20,17 @@ using namespace std;
 #define BIMODAL_MID (1<<(BIMODAL_COL-1))
 #define BIMODAL_SIZE (1<<(BIMODAL_COL))
 
-unordered_map <ADDRINT, UINT64> pc_hash_bimodal;
-UINT64 pht_index = 0;
+#define SAg_BHT_ROW 1024
+#define SAg_BHT_COL 9
+#define SAg_PHT_ROW 512
+#define SAg_PHT_COL 2
+#define SAg_MID (1<<(SAg_PHT_COL-1))
+#define SAg_MAX (1<<(SAg_PHT_COL))
 
-#define NUM_HT_BUCKETS (1 << 20)  /* For footprint calculation */
+// unordered_map <ADDRINT, UINT64> pc_hash_bimodal;
+// UINT64 pht_index = 0;
+
+// #define NUM_HT_BUCKETS (1 << 20)  /* For footprint calculation */
 
 typedef enum{
     INS_DIRECT_CALL=0,
@@ -53,7 +60,11 @@ typedef struct{
 
 /* Global variables */
 std::ostream * out = &cerr;
-UINT8 bimodal_pht[BIMODAL_ROW];
+UINT64 bimodal_pht[BIMODAL_ROW];
+
+UINT64 sag_bht[SAg_BHT_ROW];
+UINT64 sag_pht[SAg_PHT_ROW];
+
 
 ADDRINT fastForwardDone = 0;
 UINT64 icount = 0; //number of dynamically executed instructions
@@ -98,15 +109,25 @@ ADDRINT Terminate(void){
 }
 
 
+string pred_names[3] = {
+	"FNBT", "Bimodal", "Sag"
+};
+
 VOID StatDump(void){
-    *out << "FNBT Results : \n";
-    *out << "Forw Access = " << dp_forwbr << endl;
-    *out << "Back Access = " << dp_backbr << endl;
-    *out << "Forw Mispred = " << Mispred[FNBT].forw << endl;
-    *out << "Back Mispred = " << Mispred[FNBT].back << endl;
-	*out << "Bimodal Results : \n";
-    *out << "Forw Mispred = " << Mispred[BIMODAL].forw << endl;
-    *out << "Back Mispred = " << Mispred[BIMODAL].back << endl;
+	*out << "===============================================" << endl;
+	*out << "Direction Predictors" << endl;
+	for(int i=0; i<3; i++){
+		*out << pred_names[i] << ": Accesses " << (dp_forwbr + dp_backbr);
+		*out << " Mispredictions " << (Mispred[i].forw + Mispred[i].back) ;
+		*out << " (" << (1.0*Mispred[i].forw + Mispred[i].back)/(1.0*dp_forwbr + dp_backbr) << ")";
+		*out << " Forward Branches " << dp_forwbr;
+		*out << " Forward Mispredictions " << Mispred[i].forw;
+		*out << " (" << (1.0*Mispred[i].forw)/(1.0*dp_forwbr) << ")";
+		*out << " Backward Branches " << dp_backbr;
+		*out << " Backward Mispredictions " << Mispred[i].back;
+		*out << " (" << (1.0*Mispred[i].back)/(1.0*dp_backbr) << ")";
+		*out << endl;
+	}	
 	exit(0);
 }
 
@@ -126,34 +147,69 @@ VOID BkdMispred_FNBT(BOOL taken){
     Mispred[0].back += taken^1;
 }
 
-VOID FwdMispred_bimodal(BOOL taken, ADDRINT ins_addr){
-	if(pc_hash_bimodal.find(ins_addr)==pc_hash_bimodal.end())
-    {
-        pht_index = (pht_index + 1)%BIMODAL_ROW;
-        bimodal_pht[pht_index] = BIMODAL_MID;
-        pc_hash_bimodal[ins_addr] = pht_index;
-    }
-    UINT64 ind = pc_hash_bimodal[ins_addr];
-	// UINT32 hpc = pc%BIMODAL_ROW;
-    UINT8 pred = bimodal_pht[ind];
-	BOOL prediction = (pred < BIMODAL_MID)?0:1;
+
+// VOID FwdMispred_bimodal(BOOL taken, ADDRINT ins_addr){
+// 	if(pc_hash_bimodal.find(ins_addr)==pc_hash_bimodal.end())
+//     {
+//         pht_index = (pht_index + 1)%BIMODAL_ROW;
+//         bimodal_pht[pht_index] = BIMODAL_MID;
+//         pc_hash_bimodal[ins_addr] = pht_index;
+//     }
+//     UINT64 ind = pc_hash_bimodal[ins_addr];
+// 	// UINT32 hpc = pc%BIMODAL_ROW;
+//     UINT8 pred = bimodal_pht[ind];
+// 	BOOL prediction = (pred < BIMODAL_MID)?0:1;
+// 	Mispred[1].forw += taken^prediction;
+// 	bimodal_pht[ind] = (taken) ? max(pred, (UINT8)(pred+1)) : min(pred, (UINT8)(pred-1));
+// }
+
+// VOID BkdMispred_bimodal(BOOL taken, ADDRINT ins_addr){
+// 	if(pc_hash_bimodal.find(ins_addr)==pc_hash_bimodal.end())
+//     {
+//         pht_index = (pht_index + 1)%BIMODAL_ROW;
+//         bimodal_pht[pht_index] = BIMODAL_MID;
+//         pc_hash_bimodal[ins_addr] = pht_index;
+//     }
+//     UINT64 ind = pc_hash_bimodal[ins_addr];
+// 	// UINT32 hpc = pc%BIMODAL_ROW;
+//     UINT8 pred = bimodal_pht[ind];
+// 	BOOL prediction = (pred < BIMODAL_MID)?0:1;
+// 	Mispred[1].back += taken^prediction;
+// 	bimodal_pht[ind] = (taken) ? max(pred, (UINT8)(pred+1)) : min(pred, (UINT8)(pred-1));
+// }
+
+VOID FwdMispred_bimodal(BOOL taken, UINT64 pc){
+	UINT64 hpc = pc%BIMODAL_ROW;
+	UINT64 pred = bimodal_pht[hpc];
+	BOOL prediction = (pred < BIMODAL_MID) ? 0 : 1;
 	Mispred[1].forw += taken^prediction;
-	bimodal_pht[ind] = (taken) ? max(pred, (UINT8)(pred+1)) : min(pred, (UINT8)(pred-1));
+	bimodal_pht[hpc] = (taken) ? ((pred == BIMODAL_SIZE-1) ? pred : pred+1) : ((pred == 0) ? 0 : pred-1);
+}
+VOID BkdMispred_bimodal(BOOL taken, UINT64 pc){
+	UINT64 hpc = pc%BIMODAL_ROW;
+	UINT64 pred = bimodal_pht[hpc];
+	BOOL prediction = (pred < BIMODAL_MID) ? 0 : 1;
+	Mispred[1].back += taken^prediction;
+	bimodal_pht[hpc] = (taken) ? ((pred == BIMODAL_SIZE-1) ? pred : pred+1) : ((pred == 0) ? 0 : pred-1);
 }
 
-VOID BkdMispred_bimodal(BOOL taken, ADDRINT ins_addr){
-	if(pc_hash_bimodal.find(ins_addr)==pc_hash_bimodal.end())
-    {
-        pht_index = (pht_index + 1)%BIMODAL_ROW;
-        bimodal_pht[pht_index] = BIMODAL_MID;
-        pc_hash_bimodal[ins_addr] = pht_index;
-    }
-    UINT64 ind = pc_hash_bimodal[ins_addr];
-	// UINT32 hpc = pc%BIMODAL_ROW;
-    UINT8 pred = bimodal_pht[ind];
-	BOOL prediction = (pred < BIMODAL_MID)?0:1;
-	Mispred[1].back += taken^prediction;
-	bimodal_pht[ind] = (taken) ? max(pred, (UINT8)(pred+1)) : min(pred, (UINT8)(pred-1));
+VOID FwdMispred_sag(BOOL taken, UINT64 pc){
+	UINT64 hpc = pc%SAg_BHT_ROW;
+	UINT64 hist = sag_bht[hpc];
+	UINT64 counter = sag_pht[hist];
+	BOOL prediction = (counter < SAg_MID) ? 0 : 1;
+	Mispred[2].forw += taken^prediction;
+	sag_pht[hist] =  (taken) ? ((counter == SAg_MAX-1) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
+	sag_bht[hpc] = ((hist << 1 | (taken)) & 0x1FF);
+}
+VOID BkdMispred_sag(BOOL taken, UINT64 pc){
+	UINT64 hpc = pc%SAg_BHT_ROW;
+	UINT64 hist = sag_bht[hpc];
+	UINT64 counter = sag_pht[hist];
+	BOOL prediction = (counter < SAg_MID) ? 0 : 1;
+	Mispred[2].back += taken^prediction;
+	sag_pht[hist] =  (taken) ? ((counter == SAg_MAX-1) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
+	sag_bht[hpc] = ((hist << 1 | (taken)) & 0x1FF);
 }
 
 /* Instruction instrumentation routine */
@@ -216,8 +272,13 @@ VOID Trace(TRACE trace, VOID *v)
 			        INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_FNBT, IARG_BRANCH_TAKEN, IARG_END);
 
 					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_bimodal, IARG_BRANCH_TAKEN, IARG_ADDRINT, ins_addr, IARG_END);
-                }
+					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_bimodal, IARG_BRANCH_TAKEN, IARG_UINT64, (UINT64)ins_addr, IARG_END);
+					// INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_bimodal, IARG_BRANCH_TAKEN, IARG_ADDRINT, ins_addr, IARG_END);
+					
+					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
+					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_sag, IARG_BRANCH_TAKEN, IARG_UINT64, (UINT64)ins_addr, IARG_END);
+
+				}
                 else{
                     INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
 			        INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdAccess, IARG_END); 
@@ -226,8 +287,12 @@ VOID Trace(TRACE trace, VOID *v)
 			        INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_FNBT, IARG_BRANCH_TAKEN, IARG_END);
 
 					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_bimodal, IARG_BRANCH_TAKEN, IARG_ADDRINT, ins_addr, IARG_END);
-                }
+					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_bimodal, IARG_BRANCH_TAKEN, IARG_UINT64, (UINT64)ins_addr, IARG_END);
+					// INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_bimodal, IARG_BRANCH_TAKEN, IARG_ADDRINT, ins_addr, IARG_END);
+					
+					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
+					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_sag, IARG_BRANCH_TAKEN, IARG_UINT64, (UINT64)ins_addr, IARG_END);
+				}
             }
 			// INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
 			// INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) <FuncName>, IARG_IARGLIST, args, IARG_END);
@@ -272,7 +337,10 @@ int main(int argc, char *argv[])
 	if (!fileName.empty())
 		out = new std::ofstream(fileName.c_str());
 
-	for(int i=0; i<BIMODAL_ROW; i++) bimodal_pht[i]=0;
+	for(int i=0; i<BIMODAL_ROW; i++) bimodal_pht[i] = 0;
+	for(int i=0; i<SAg_BHT_ROW; i++) sag_bht[i] = 0;
+	for(int i=0; i<SAg_PHT_ROW; i++) sag_pht[i] = 0;
+
     
 	// Register function to be called to instrument instructions
 	TRACE_AddInstrumentFunction(Trace, 0);
