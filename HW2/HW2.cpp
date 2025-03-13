@@ -3,6 +3,10 @@
 #include <set>
 #include "pin.H"
 #include <cstdlib>
+#include <algorithm>
+#include <unordered_map>
+
+using namespace std;
 
 /* Macro and type definitions */
 #define BILLION 1000000000
@@ -16,9 +20,10 @@
 #define BIMODAL_MID (1<<(BIMODAL_COL-1))
 #define BIMODAL_SIZE (1<<(BIMODAL_COL))
 
-#define NUM_HT_BUCKETS (1 << 20)  /* For footprint calculation */
+unordered_map <ADDRINT, UINT64> pc_hash_bimodal;
+UINT64 pht_index = 0;
 
-using namespace std;
+#define NUM_HT_BUCKETS (1 << 20)  /* For footprint calculation */
 
 typedef enum{
     INS_DIRECT_CALL=0,
@@ -121,20 +126,34 @@ VOID BkdMispred_FNBT(BOOL taken){
     Mispred[0].back += taken^1;
 }
 
-VOID FwdMispred_bimodal(BOOL taken, UINT32 pc){
-	UINT32 hpc = pc%BIMODAL_ROW;
-    UINT8 pred = bimodal_pht[hpc];
+VOID FwdMispred_bimodal(BOOL taken, ADDRINT ins_addr){
+	if(pc_hash_bimodal.find(ins_addr)==pc_hash_bimodal.end())
+    {
+        pht_index = (pht_index + 1)%BIMODAL_ROW;
+        bimodal_pht[pht_index] = BIMODAL_MID;
+        pc_hash_bimodal[ins_addr] = pht_index;
+    }
+    UINT64 ind = pc_hash_bimodal[ins_addr];
+	// UINT32 hpc = pc%BIMODAL_ROW;
+    UINT8 pred = bimodal_pht[ind];
 	BOOL prediction = (pred < BIMODAL_MID)?0:1;
 	Mispred[1].forw += taken^prediction;
-	bimodal_pht[hpc] = (taken==prediction) ? ((((pred+1)%BIMODAL_SIZE) > pred) ? ((pred+1)%BIMODAL_SIZE) : (pred)) : (pred-1);
+	bimodal_pht[ind] = (taken) ? max(pred, (UINT8)(pred+1)) : min(pred, (UINT8)(pred-1));
 }
 
-VOID BkdMispred_bimodal(BOOL taken, UINT32 pc){
-	UINT32 hpc = pc%BIMODAL_ROW;
-    UINT8 pred = bimodal_pht[hpc];
+VOID BkdMispred_bimodal(BOOL taken, ADDRINT ins_addr){
+	if(pc_hash_bimodal.find(ins_addr)==pc_hash_bimodal.end())
+    {
+        pht_index = (pht_index + 1)%BIMODAL_ROW;
+        bimodal_pht[pht_index] = BIMODAL_MID;
+        pc_hash_bimodal[ins_addr] = pht_index;
+    }
+    UINT64 ind = pc_hash_bimodal[ins_addr];
+	// UINT32 hpc = pc%BIMODAL_ROW;
+    UINT8 pred = bimodal_pht[ind];
 	BOOL prediction = (pred < BIMODAL_MID)?0:1;
 	Mispred[1].back += taken^prediction;
-	bimodal_pht[hpc] = (taken==prediction) ? ((((pred+1)%BIMODAL_SIZE) > pred) ? ((pred+1)%BIMODAL_SIZE) : (pred)) : (pred-1);
+	bimodal_pht[ind] = (taken) ? max(pred, (UINT8)(pred+1)) : min(pred, (UINT8)(pred-1));
 }
 
 /* Instruction instrumentation routine */
@@ -188,7 +207,7 @@ VOID Trace(TRACE trace, VOID *v)
             if(category == INS_COND_BRANCH){
 				ADDRINT ins_addr = INS_Address(ins);
                 ADDRINT taken_addr = INS_DirectControlFlowTargetAddress(ins);
-				UINT32 pc = (UINT32)ins_addr;
+				// UINT32 pc = (UINT32)ins_addr;
                 if(taken_addr > ins_addr){
                     INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
 			        INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdAccess, IARG_END); 
@@ -197,7 +216,7 @@ VOID Trace(TRACE trace, VOID *v)
 			        INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_FNBT, IARG_BRANCH_TAKEN, IARG_END);
 
 					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_bimodal, IARG_BRANCH_TAKEN, IARG_UINT32, pc, IARG_END);
+					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_bimodal, IARG_BRANCH_TAKEN, IARG_ADDRINT, ins_addr, IARG_END);
                 }
                 else{
                     INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
@@ -207,7 +226,7 @@ VOID Trace(TRACE trace, VOID *v)
 			        INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_FNBT, IARG_BRANCH_TAKEN, IARG_END);
 
 					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_bimodal, IARG_BRANCH_TAKEN, IARG_UINT32, pc, IARG_END);
+					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_bimodal, IARG_BRANCH_TAKEN, IARG_ADDRINT, ins_addr, IARG_END);
                 }
             }
 			// INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
@@ -232,6 +251,9 @@ VOID Fini(INT32 code, VOID * v)
     *out << "Back Access = " << dp_backbr << endl;
     *out << "Forw Mispred = " << Mispred[FNBT].forw << endl;
     *out << "Back Mispred = " << Mispred[FNBT].back << endl;
+	*out << "Bimodal Results : \n";
+    *out << "Forw Mispred = " << Mispred[BIMODAL].forw << endl;
+    *out << "Back Mispred = " << Mispred[BIMODAL].back << endl;
 }
 
 int main(int argc, char *argv[])
