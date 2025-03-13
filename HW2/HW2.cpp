@@ -13,6 +13,8 @@
 
 #define BIMODAL_ROW 512
 #define BIMODAL_COL 2
+#define BIMODAL_MID (1<<(BIMODAL_COL-1))
+#define BIMODAL_SIZE (1<<(BIMODAL_COL))
 
 #define NUM_HT_BUCKETS (1 << 20)  /* For footprint calculation */
 
@@ -122,17 +124,17 @@ VOID BkdMispred_FNBT(BOOL taken){
 VOID FwdMispred_bimodal(BOOL taken, UINT32 pc){
 	UINT32 hpc = pc%BIMODAL_ROW;
     UINT8 pred = bimodal_pht[hpc];
-	BOOL prediction = (pred < (1<<(BIMODAL_COL-1)))?0:1;
+	BOOL prediction = (pred < BIMODAL_MID)?0:1;
 	Mispred[1].forw += taken^prediction;
-	bimodal_pht[hpc] = (taken==prediction) ? ((((pred+1)%(1<<(BIMODAL_COL))) > pred) ? ((pred+1)%(1<<(BIMODAL_COL))) : (pred)) : (pred-1);
+	bimodal_pht[hpc] = (taken==prediction) ? ((((pred+1)%BIMODAL_SIZE) > pred) ? ((pred+1)%BIMODAL_SIZE) : (pred)) : (pred-1);
 }
 
 VOID BkdMispred_bimodal(BOOL taken, UINT32 pc){
 	UINT32 hpc = pc%BIMODAL_ROW;
     UINT8 pred = bimodal_pht[hpc];
-	BOOL prediction = (pred < (1<<(BIMODAL_COL-1)))?0:1;
+	BOOL prediction = (pred < BIMODAL_MID)?0:1;
 	Mispred[1].back += taken^prediction;
-	bimodal_pht[hpc] = (taken==prediction) ? ((((pred+1)%(1<<(BIMODAL_COL))) > pred) ? ((pred+1)%(1<<(BIMODAL_COL))) : (pred)) : (pred-1);
+	bimodal_pht[hpc] = (taken==prediction) ? ((((pred+1)%BIMODAL_SIZE) > pred) ? ((pred+1)%BIMODAL_SIZE) : (pred)) : (pred-1);
 }
 
 /* Instruction instrumentation routine */
