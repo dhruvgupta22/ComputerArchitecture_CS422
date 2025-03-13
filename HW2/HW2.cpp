@@ -120,17 +120,19 @@ VOID BkdMispred_FNBT(BOOL taken){
 }
 
 VOID FwdMispred_bimodal(BOOL taken, UINT32 pc){
-    UINT8 pred = bimodal_pht[pc%BIMODAL_ROW];
+	UINT32 hpc = pc%BIMODAL_ROW;
+    UINT8 pred = bimodal_pht[hpc];
 	BOOL prediction = (pred < (1<<(BIMODAL_COL-1)))?0:1;
 	Mispred[1].forw += taken^prediction;
-	bimodal_pht[pc%BIMODAL_ROW] = (taken==prediction) ? ((pred+1)%(1<<(BIMODAL_COL))) : (pred-1);
+	bimodal_pht[hpc] = (taken==prediction) ? ((((pred+1)%(1<<(BIMODAL_COL))) > pred) ? ((pred+1)%(1<<(BIMODAL_COL))) : (pred)) : (pred-1);
 }
 
 VOID BkdMispred_bimodal(BOOL taken, UINT32 pc){
-    UINT8 pred = bimodal_pht[pc%BIMODAL_ROW];
+	UINT32 hpc = pc%BIMODAL_ROW;
+    UINT8 pred = bimodal_pht[hpc];
 	BOOL prediction = (pred < (1<<(BIMODAL_COL-1)))?0:1;
 	Mispred[1].back += taken^prediction;
-	bimodal_pht[pc%BIMODAL_ROW] = (taken==prediction) ? ((pred+1)%(1<<(BIMODAL_COL))) : (pred-1);
+	bimodal_pht[hpc] = (taken==prediction) ? ((((pred+1)%(1<<(BIMODAL_COL))) > pred) ? ((pred+1)%(1<<(BIMODAL_COL))) : (pred)) : (pred-1);
 }
 
 /* Instruction instrumentation routine */
