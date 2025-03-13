@@ -11,6 +11,9 @@
 #define MAX_INS_OPS 10
 #define MEM_LATENCY 70.0
 
+#define BIMODAL_ROW 512
+#define BIMODAL_COL 2
+
 #define NUM_HT_BUCKETS (1 << 20)  /* For footprint calculation */
 
 using namespace std;
@@ -43,6 +46,7 @@ typedef struct{
 
 /* Global variables */
 std::ostream * out = &cerr;
+UINT8 bimodal_pht[BIMODAL_ROW];
 
 ADDRINT fastForwardDone = 0;
 UINT64 icount = 0; //number of dynamically executed instructions
@@ -93,6 +97,9 @@ VOID StatDump(void){
     *out << "Back Access = " << dp_backbr << endl;
     *out << "Forw Mispred = " << Mispred[FNBT].forw << endl;
     *out << "Back Mispred = " << Mispred[FNBT].back << endl;
+	*out << "Bimodal Results : \n";
+    *out << "Forw Mispred = " << Mispred[BIMODAL].forw << endl;
+    *out << "Back Mispred = " << Mispred[BIMODAL].back << endl;
 	exit(0);
 }
 
@@ -104,12 +111,26 @@ VOID BkdAccess(){
     dp_backbr++;
 }
 
-VOID FwdMispred(BOOL taken, BOOL pred_taken, DIR_PRED dp){
-    Mispred[dp].forw += taken^pred_taken;
+VOID FwdMispred_FNBT(BOOL taken){
+    Mispred[0].forw += taken^0;
 }
 
-VOID BkdMispred(BOOL taken, BOOL pred_taken, DIR_PRED dp){
-    Mispred[dp].back += taken^pred_taken;
+VOID BkdMispred_FNBT(BOOL taken){
+    Mispred[0].back += taken^1;
+}
+
+VOID FwdMispred_bimodal(BOOL taken, UINT32 pc){
+    UINT8 pred = bimodal_pht[pc%BIMODAL_ROW];
+	BOOL prediction = (pred < (1<<(BIMODAL_COL-1)))?0:1;
+	Mispred[1].forw += taken^prediction;
+	bimodal_pht[pc%BIMODAL_ROW] = (taken==prediction) ? ((pred+1)%(1<<(BIMODAL_COL))) : (pred-1);
+}
+
+VOID BkdMispred_bimodal(BOOL taken, UINT32 pc){
+    UINT8 pred = bimodal_pht[pc%BIMODAL_ROW];
+	BOOL prediction = (pred < (1<<(BIMODAL_COL-1)))?0:1;
+	Mispred[1].back += taken^prediction;
+	bimodal_pht[pc%BIMODAL_ROW] = (taken==prediction) ? ((pred+1)%(1<<(BIMODAL_COL))) : (pred-1);
 }
 
 /* Instruction instrumentation routine */
@@ -160,28 +181,30 @@ VOID Trace(TRACE trace, VOID *v)
 			// /* Add category as the first argument to analysis routine */
 			// IARGLIST_AddArguments(args, IARG_UINT32, category, IARG_END);
 
-			
             if(category == INS_COND_BRANCH){
-                ADDRINT ins_addr = INS_Address(ins);
+				ADDRINT ins_addr = INS_Address(ins);
                 ADDRINT taken_addr = INS_DirectControlFlowTargetAddress(ins);
+				UINT32 pc = (UINT32)ins_addr;
                 if(taken_addr > ins_addr){
                     INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
 			        INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdAccess, IARG_END); 
                     
                     INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-			        INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred, 
-                        IARG_BRANCH_TAKEN, IARG_BOOL, false, IARG_UINT32, FNBT, IARG_END);
+			        INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_FNBT, IARG_BRANCH_TAKEN, IARG_END);
+
+					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
+					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_bimodal, IARG_BRANCH_TAKEN, IARG_UINT32, pc, IARG_END);
                 }
                 else{
                     INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
 			        INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdAccess, IARG_END); 
 
                     INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-			        INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred, 
-                        IARG_BRANCH_TAKEN, IARG_BOOL, true, IARG_UINT32, FNBT, IARG_END);
-                }
+			        INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_FNBT, IARG_BRANCH_TAKEN, IARG_END);
 
-                
+					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
+					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_bimodal, IARG_BRANCH_TAKEN, IARG_UINT32, pc, IARG_END);
+                }
             }
 			// INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
 			// INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) <FuncName>, IARG_IARGLIST, args, IARG_END);
@@ -223,6 +246,7 @@ int main(int argc, char *argv[])
 	if (!fileName.empty())
 		out = new std::ofstream(fileName.c_str());
 
+	for(int i=0; i<BIMODAL_ROW; i++) bimodal_pht[i]=0;
     
 	// Register function to be called to instrument instructions
 	TRACE_AddInstrumentFunction(Trace, 0);
