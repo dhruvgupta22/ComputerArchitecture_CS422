@@ -31,6 +31,13 @@ using namespace std;
 #define GAg_MID (1 << (GAg_PHT_COL-1))
 #define GAg_MAX ((1 << (GAg_PHT_COL))-1)
 
+#define GSHARE_GHR_SIZE 9
+#define GSHARE_GHR_MASK ((1 << GSHARE_GHR_SIZE)-1)
+#define GSHARE_PHT_ROW 512
+#define GSHARE_PHT_COL 3
+#define GSHARE_MID (1 << (GSHARE_PHT_COL-1))
+#define GSHARE_MAX ((1 << (GSHARE_PHT_COL))-1)
+
 typedef enum{
     INS_DIRECT_CALL=0,
 	INS_INDIRECT_CALL,
@@ -67,6 +74,9 @@ UINT64 sag_pht[SAg_PHT_ROW];
 
 UINT64 gag_ghr;
 UINT64 gag_pht[GAg_PHT_ROW];
+
+UINT64 gshare_ghr;
+UINT64 gshare_pht[GSHARE_PHT_ROW];
 
 ADDRINT fastForwardDone = 0;
 UINT64 icount = 0; //number of dynamically executed instructions
@@ -156,17 +166,18 @@ VOID BkdMispred_FNBT(BOOL taken){
 
 VOID FwdMispred_bimodal(BOOL taken, UINT64 pc){
 	UINT64 hpc = pc%BIMODAL_ROW;
-	UINT64 pred = bimodal_pht[hpc];
-	BOOL prediction = (pred < BIMODAL_MID) ? 0 : 1;
+	UINT64 counter = bimodal_pht[hpc];
+	BOOL prediction = (counter < BIMODAL_MID) ? 0 : 1;
 	Mispred[1].forw += taken^prediction;
-	bimodal_pht[hpc] = (taken) ? ((pred == BIMODAL_MAX) ? pred : pred+1) : ((pred == 0) ? 0 : pred-1);
+	bimodal_pht[hpc] = (taken) ? ((counter == BIMODAL_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
 }
+
 VOID BkdMispred_bimodal(BOOL taken, UINT64 pc){
 	UINT64 hpc = pc%BIMODAL_ROW;
-	UINT64 pred = bimodal_pht[hpc];
-	BOOL prediction = (pred < BIMODAL_MID) ? 0 : 1;
+	UINT64 counter = bimodal_pht[hpc];
+	BOOL prediction = (counter < BIMODAL_MID) ? 0 : 1;
 	Mispred[1].back += taken^prediction;
-	bimodal_pht[hpc] = (taken) ? ((pred == BIMODAL_MAX) ? pred : pred+1) : ((pred == 0) ? 0 : pred-1);
+	bimodal_pht[hpc] = (taken) ? ((counter == BIMODAL_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
 }
 
 VOID FwdMispred_sag(BOOL taken, UINT64 pc){
@@ -178,6 +189,7 @@ VOID FwdMispred_sag(BOOL taken, UINT64 pc){
 	sag_pht[hist] =  (taken) ? ((counter == SAg_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
 	sag_bht[hpc] = ((hist << 1 | (taken)) & SAg_BHT_MASK);
 }
+
 VOID BkdMispred_sag(BOOL taken, UINT64 pc){
 	UINT64 hpc = pc%SAg_BHT_ROW;
 	UINT64 hist = sag_bht[hpc];
@@ -196,6 +208,7 @@ VOID FwdMispred_gag(BOOL taken){
 	gag_pht[hist] =  (taken) ? ((counter == GAg_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
 	gag_ghr = ((hist << 1 | (taken)) & GAg_GHR_MASK);
 }
+
 VOID BkdMispred_gag(BOOL taken){
 	UINT64 hist = gag_ghr & GAg_GHR_MASK;
 	UINT64 counter = gag_pht[hist];
@@ -204,6 +217,27 @@ VOID BkdMispred_gag(BOOL taken){
 	gag_pht[hist] =  (taken) ? ((counter == GAg_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
 	gag_ghr = ((hist << 1 | (taken)) & GAg_GHR_MASK);
 }
+
+VOID FwdMispred_gshare(BOOL taken, UINT64 pc){
+	UINT64 hist = gshare_ghr & GSHARE_GHR_MASK;
+	UINT64 hash = (hist ^ pc) & GSHARE_GHR_MASK;
+	UINT64 counter = gshare_pht[hash];
+	BOOL prediction = (counter < GSHARE_MID) ? 0 : 1;
+	Mispred[4].forw += taken^prediction;
+	gshare_pht[hash] =  (taken) ? ((counter == GSHARE_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
+	gshare_ghr = ((hist << 1 | (taken)) & GSHARE_GHR_MASK);
+}
+
+VOID BkdMispred_gshare(BOOL taken, UINT64 pc){
+	UINT64 hist = gshare_ghr & GSHARE_GHR_MASK;
+	UINT64 hash = (hist ^ pc) & GSHARE_GHR_MASK;
+	UINT64 counter = gshare_pht[hash];
+	BOOL prediction = (counter < GSHARE_MID) ? 0 : 1;
+	Mispred[4].back += taken^prediction;
+	gshare_pht[hash] =  (taken) ? ((counter == GSHARE_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
+	gshare_ghr = ((hist << 1 | (taken)) & GSHARE_GHR_MASK);
+}
+
 
 /* Instruction instrumentation routine */
 VOID Trace(TRACE trace, VOID *v)
@@ -254,7 +288,7 @@ VOID Trace(TRACE trace, VOID *v)
             if(category == INS_COND_BRANCH){
 				ADDRINT ins_addr = INS_Address(ins);
                 ADDRINT taken_addr = INS_DirectControlFlowTargetAddress(ins);
-				// UINT32 pc = (UINT32)ins_addr;
+				UINT64 pc = (UINT64)ins_addr;
                 if(taken_addr > ins_addr){
                     INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
 			        INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdAccess, IARG_END); 
@@ -263,14 +297,16 @@ VOID Trace(TRACE trace, VOID *v)
 			        INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_FNBT, IARG_BRANCH_TAKEN, IARG_END);
 
 					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_bimodal, IARG_BRANCH_TAKEN, IARG_UINT64, (UINT64)ins_addr, IARG_END);
-					// INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_bimodal, IARG_BRANCH_TAKEN, IARG_ADDRINT, ins_addr, IARG_END);
+					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_bimodal, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
 					
 					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_sag, IARG_BRANCH_TAKEN, IARG_UINT64, (UINT64)ins_addr, IARG_END);
+					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_sag, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
 
 					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
 					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_gag, IARG_BRANCH_TAKEN, IARG_END);
+					
+					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
+					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_gshare, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
 				}
                 else{
                     INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
@@ -280,13 +316,16 @@ VOID Trace(TRACE trace, VOID *v)
 			        INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_FNBT, IARG_BRANCH_TAKEN, IARG_END);
 
 					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_bimodal, IARG_BRANCH_TAKEN, IARG_UINT64, (UINT64)ins_addr, IARG_END);
-					// INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_bimodal, IARG_BRANCH_TAKEN, IARG_ADDRINT, ins_addr, IARG_END);
+					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_bimodal, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
 					
 					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_sag, IARG_BRANCH_TAKEN, IARG_UINT64, (UINT64)ins_addr, IARG_END);
+					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_sag, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
+				
 					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
 					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_gag, IARG_BRANCH_TAKEN, IARG_END);
+
+					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
+					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_gshare, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
 				}
             }
 			// INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
