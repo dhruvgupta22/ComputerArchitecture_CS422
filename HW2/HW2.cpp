@@ -18,7 +18,7 @@ using namespace std;
 #define BIMODAL_ROW 512
 #define BIMODAL_COL 2
 #define BIMODAL_MID (1<<(BIMODAL_COL-1))
-#define BIMODAL_SIZE (1<<(BIMODAL_COL))
+#define BIMODAL_MAX (1<<(BIMODAL_COL))
 
 #define SAg_BHT_ROW 1024
 #define SAg_BHT_COL 9
@@ -110,7 +110,7 @@ ADDRINT Terminate(void){
 
 
 string pred_names[3] = {
-	"FNBT", "Bimodal", "Sag"
+	"FNBT", "Bimodal", "SAg"
 };
 
 VOID StatDump(void){
@@ -183,14 +183,14 @@ VOID FwdMispred_bimodal(BOOL taken, UINT64 pc){
 	UINT64 pred = bimodal_pht[hpc];
 	BOOL prediction = (pred < BIMODAL_MID) ? 0 : 1;
 	Mispred[1].forw += taken^prediction;
-	bimodal_pht[hpc] = (taken) ? ((pred == BIMODAL_SIZE-1) ? pred : pred+1) : ((pred == 0) ? 0 : pred-1);
+	bimodal_pht[hpc] = (taken) ? ((pred == BIMODAL_MAX-1) ? pred : pred+1) : ((pred == 0) ? 0 : pred-1);
 }
 VOID BkdMispred_bimodal(BOOL taken, UINT64 pc){
 	UINT64 hpc = pc%BIMODAL_ROW;
 	UINT64 pred = bimodal_pht[hpc];
 	BOOL prediction = (pred < BIMODAL_MID) ? 0 : 1;
 	Mispred[1].back += taken^prediction;
-	bimodal_pht[hpc] = (taken) ? ((pred == BIMODAL_SIZE-1) ? pred : pred+1) : ((pred == 0) ? 0 : pred-1);
+	bimodal_pht[hpc] = (taken) ? ((pred == BIMODAL_MAX-1) ? pred : pred+1) : ((pred == 0) ? 0 : pred-1);
 }
 
 VOID FwdMispred_sag(BOOL taken, UINT64 pc){
