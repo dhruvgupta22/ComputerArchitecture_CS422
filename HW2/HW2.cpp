@@ -38,6 +38,9 @@ using namespace std;
 #define GSHARE_MID (1 << (GSHARE_PHT_COL-1))
 #define GSHARE_MAX ((1 << (GSHARE_PHT_COL))-1)
 
+#define HYBRID_2_META_PRED_ROW 512
+#define HYBRID_2_META_PRED_COL 2
+
 typedef enum{
     INS_DIRECT_CALL=0,
 	INS_INDIRECT_CALL,
@@ -67,6 +70,7 @@ typedef struct{
 
 /* Global variables */
 std::ostream * out = &cerr;
+
 UINT64 bimodal_pht[BIMODAL_ROW];
 
 UINT64 sag_bht[SAg_BHT_ROW];
@@ -77,6 +81,12 @@ UINT64 gag_pht[GAg_PHT_ROW];
 
 UINT64 gshare_ghr;
 UINT64 gshare_pht[GSHARE_PHT_ROW];
+
+UINT64 hybrid_2_SAg_bht[SAg_BHT_ROW];
+UINT64 hybrid_2_SAg_pht[SAg_PHT_ROW];
+UINT64 hybrid_2_GAg_ghr;
+UINT64 hybrid_2_GAg_pht[GAg_PHT_ROW];
+UINT64 hybrid_2_meta_pred[HYBRID_2_META_PRED_ROW];
 
 ADDRINT fastForwardDone = 0;
 UINT64 icount = 0; //number of dynamically executed instructions
@@ -141,6 +151,7 @@ VOID StatDump(void){
 		*out << endl;
 	}
 	*out << endl;
+	*out << "===============================================" << endl;
 	*out << "Branch Target Predictors" << endl;
 	*out << endl;
 	*out << endl;
@@ -345,14 +356,7 @@ VOID Trace(TRACE trace, VOID *v)
 /* Fini routine */
 VOID Fini(INT32 code, VOID * v)
 {
-    *out << "FNBT Results : \n";
-    *out << "Forw Access = " << dp_forwbr << endl;
-    *out << "Back Access = " << dp_backbr << endl;
-    *out << "Forw Mispred = " << Mispred[FNBT].forw << endl;
-    *out << "Back Mispred = " << Mispred[FNBT].back << endl;
-	*out << "Bimodal Results : \n";
-    *out << "Forw Mispred = " << Mispred[BIMODAL].forw << endl;
-    *out << "Back Mispred = " << Mispred[BIMODAL].back << endl;
+    exit(0);
 }
 
 int main(int argc, char *argv[])
