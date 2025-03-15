@@ -38,8 +38,12 @@ using namespace std;
 #define GSHARE_MID (1 << (GSHARE_PHT_COL-1))
 #define GSHARE_MAX ((1 << (GSHARE_PHT_COL))-1)
 
-#define HYBRID_2_META_PRED_ROW 512
-#define HYBRID_2_META_PRED_COL 2
+#define HYBRID2_GHR_SIZE 9
+#define HYBRID2_GHR_MASK ((1 << HYBRID2_GHR_SIZE)-1)
+#define HYBRID_2_META_ROW 512
+#define HYBRID_2_META_COL 2
+#define HYBRID2_GHR_MID (1 << (HYBRID_2_META_COL-1))
+#define HYBRID2_GHR_MAX ((1 << (HYBRID_2_META_COL))-1)
 
 typedef enum{
     INS_DIRECT_CALL=0,
@@ -73,11 +77,11 @@ std::ostream * out = &cerr;
 
 UINT64 bimodal_pht[BIMODAL_ROW];
 
-UINT64 sag_bht[SAg_BHT_ROW];
-UINT64 sag_pht[SAg_PHT_ROW];
+UINT64 SAg_bht[SAg_BHT_ROW];
+UINT64 SAg_pht[SAg_PHT_ROW];
 
-UINT64 gag_ghr;
-UINT64 gag_pht[GAg_PHT_ROW];
+UINT64 GAg_ghr;
+UINT64 GAg_pht[GAg_PHT_ROW];
 
 UINT64 gshare_ghr;
 UINT64 gshare_pht[GSHARE_PHT_ROW];
@@ -86,7 +90,8 @@ UINT64 hybrid_2_SAg_bht[SAg_BHT_ROW];
 UINT64 hybrid_2_SAg_pht[SAg_PHT_ROW];
 UINT64 hybrid_2_GAg_ghr;
 UINT64 hybrid_2_GAg_pht[GAg_PHT_ROW];
-UINT64 hybrid_2_meta_pred[HYBRID_2_META_PRED_ROW];
+UINT64 hybrid_2_meta_ghr;
+UINT64 hybrid_2_meta_pred[HYBRID_2_META_ROW];
 
 ADDRINT fastForwardDone = 0;
 UINT64 icount = 0; //number of dynamically executed instructions
@@ -191,42 +196,42 @@ VOID BkdMispred_bimodal(BOOL taken, UINT64 pc){
 	bimodal_pht[hpc] = (taken) ? ((counter == BIMODAL_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
 }
 
-VOID FwdMispred_sag(BOOL taken, UINT64 pc){
+VOID FwdMispred_SAg(BOOL taken, UINT64 pc){
 	UINT64 hpc = pc%SAg_BHT_ROW;
-	UINT64 hist = sag_bht[hpc];
-	UINT64 counter = sag_pht[hist];
+	UINT64 hist = SAg_bht[hpc];
+	UINT64 counter = SAg_pht[hist];
 	BOOL prediction = (counter < SAg_MID) ? 0 : 1;
 	Mispred[2].forw += taken^prediction;
-	sag_pht[hist] =  (taken) ? ((counter == SAg_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
-	sag_bht[hpc] = ((hist << 1 | (taken)) & SAg_BHT_MASK);
+	SAg_pht[hist] =  (taken) ? ((counter == SAg_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
+	SAg_bht[hpc] = ((hist << 1 | (taken)) & SAg_BHT_MASK);
 }
 
-VOID BkdMispred_sag(BOOL taken, UINT64 pc){
+VOID BkdMispred_SAg(BOOL taken, UINT64 pc){
 	UINT64 hpc = pc%SAg_BHT_ROW;
-	UINT64 hist = sag_bht[hpc];
-	UINT64 counter = sag_pht[hist];
+	UINT64 hist = SAg_bht[hpc];
+	UINT64 counter = SAg_pht[hist];
 	BOOL prediction = (counter < SAg_MID) ? 0 : 1;
 	Mispred[2].back += taken^prediction;
-	sag_pht[hist] =  (taken) ? ((counter == SAg_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
-	sag_bht[hpc] = ((hist << 1 | (taken)) & SAg_BHT_MASK);
+	SAg_pht[hist] =  (taken) ? ((counter == SAg_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
+	SAg_bht[hpc] = ((hist << 1 | (taken)) & SAg_BHT_MASK);
 }
 
-VOID FwdMispred_gag(BOOL taken){
-	UINT64 hist = gag_ghr & GAg_GHR_MASK;
-	UINT64 counter = gag_pht[hist];
+VOID FwdMispred_GAg(BOOL taken){
+	UINT64 hist = GAg_ghr & GAg_GHR_MASK;
+	UINT64 counter = GAg_pht[hist];
 	BOOL prediction = (counter < GAg_MID) ? 0 : 1;
 	Mispred[3].forw += taken^prediction;
-	gag_pht[hist] =  (taken) ? ((counter == GAg_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
-	gag_ghr = ((hist << 1 | (taken)) & GAg_GHR_MASK);
+	GAg_pht[hist] =  (taken) ? ((counter == GAg_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
+	GAg_ghr = ((hist << 1 | (taken)) & GAg_GHR_MASK);
 }
 
-VOID BkdMispred_gag(BOOL taken){
-	UINT64 hist = gag_ghr & GAg_GHR_MASK;
-	UINT64 counter = gag_pht[hist];
+VOID BkdMispred_GAg(BOOL taken){
+	UINT64 hist = GAg_ghr & GAg_GHR_MASK;
+	UINT64 counter = GAg_pht[hist];
 	BOOL prediction = (counter < GAg_MID) ? 0 : 1;
 	Mispred[3].back += taken^prediction;
-	gag_pht[hist] =  (taken) ? ((counter == GAg_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
-	gag_ghr = ((hist << 1 | (taken)) & GAg_GHR_MASK);
+	GAg_pht[hist] =  (taken) ? ((counter == GAg_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
+	GAg_ghr = ((hist << 1 | (taken)) & GAg_GHR_MASK);
 }
 
 VOID FwdMispred_gshare(BOOL taken, UINT64 pc){
@@ -249,6 +254,55 @@ VOID BkdMispred_gshare(BOOL taken, UINT64 pc){
 	gshare_ghr = ((hist << 1 | (taken)) & GSHARE_GHR_MASK);
 }
 
+VOID FwdMispred_hybrid_2(BOOL taken, UINT64 pc){
+	UINT64 hist = hybrid_2_meta_ghr & HYBRID2_GHR_MASK;
+	UINT64 counter = hybrid_2_meta_pred[hist];
+	BOOL choice = (counter < HYBRID2_GHR_MID) ? 0 : 1;
+
+	UINT64 hpc1 = pc%SAg_BHT_ROW;
+	UINT64 hist1 = hybrid_2_SAg_bht[hpc1];
+	UINT64 counter1 = hybrid_2_SAg_pht[hist1];
+	BOOL prediction1 = (counter1 < SAg_MID) ? 0 : 1;
+	
+	UINT64 hist2 = hybrid_2_GAg_ghr & GAg_GHR_MASK;
+	UINT64 counter2 = hybrid_2_GAg_pht[hist2];
+	BOOL prediction2 = (counter2 < GAg_MID) ? 0 : 1;
+	
+	if(choice == 0) Mispred[5].forw += taken^prediction1;
+	else Mispred[5].forw += taken^prediction2;
+	
+	hybrid_2_SAg_pht[hist1] =  (taken) ? ((counter1 == SAg_MAX) ? counter1 : counter1+1) : ((counter1 == 0) ? 0 : counter1-1);
+	hybrid_2_SAg_bht[hpc1] = ((hist1 << 1 | (taken)) & SAg_BHT_MASK);
+	hybrid_2_GAg_pht[hist2] =  (taken) ? ((counter2 == GAg_MAX) ? counter2 : counter2+1) : ((counter2 == 0) ? 0 : counter2-1);
+	hybrid_2_GAg_ghr = ((hist2 << 1 | (taken)) & GAg_GHR_MASK);
+	hybrid_2_meta_pred[hist] = (taken) ? ((counter == HYBRID2_GHR_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
+	hybrid_2_meta_ghr = ((hist << 1 | (taken)) & HYBRID2_GHR_MASK);
+}
+
+VOID BkdMispred_hybrid_2(BOOL taken, UINT64 pc){
+	UINT64 hist = hybrid_2_meta_ghr & HYBRID2_GHR_MASK;
+	UINT64 counter = hybrid_2_meta_pred[hist];
+	BOOL choice = (counter < HYBRID2_GHR_MID) ? 0 : 1;
+
+	UINT64 hpc1 = pc%SAg_BHT_ROW;
+	UINT64 hist1 = hybrid_2_SAg_bht[hpc1];
+	UINT64 counter1 = hybrid_2_SAg_pht[hist1];
+	BOOL prediction1 = (counter1 < SAg_MID) ? 0 : 1;
+	
+	UINT64 hist2 = hybrid_2_GAg_ghr & GAg_GHR_MASK;
+	UINT64 counter2 = hybrid_2_GAg_pht[hist2];
+	BOOL prediction2 = (counter2 < GAg_MID) ? 0 : 1;
+	
+	if(choice == 0) Mispred[5].back += taken^prediction1;
+	else Mispred[5].back += taken^prediction2;
+	
+	hybrid_2_SAg_pht[hist1] =  (taken) ? ((counter1 == SAg_MAX) ? counter1 : counter1+1) : ((counter1 == 0) ? 0 : counter1-1);
+	hybrid_2_SAg_bht[hpc1] = ((hist1 << 1 | (taken)) & SAg_BHT_MASK);
+	hybrid_2_GAg_pht[hist2] =  (taken) ? ((counter2 == GAg_MAX) ? counter2 : counter2+1) : ((counter2 == 0) ? 0 : counter2-1);
+	hybrid_2_GAg_ghr = ((hist2 << 1 | (taken)) & GAg_GHR_MASK);
+	hybrid_2_meta_pred[hist] = (taken) ? ((counter == HYBRID2_GHR_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
+	hybrid_2_meta_ghr = ((hist << 1 | (taken)) & HYBRID2_GHR_MASK);
+}
 
 /* Instruction instrumentation routine */
 VOID Trace(TRACE trace, VOID *v)
@@ -311,13 +365,16 @@ VOID Trace(TRACE trace, VOID *v)
 					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_bimodal, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
 					
 					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_sag, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
+					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_SAg, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
 
 					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_gag, IARG_BRANCH_TAKEN, IARG_END);
+					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_GAg, IARG_BRANCH_TAKEN, IARG_END);
 					
 					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
 					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_gshare, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
+
+					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
+					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_hybrid_2, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
 				}
                 else{
                     INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
@@ -330,13 +387,16 @@ VOID Trace(TRACE trace, VOID *v)
 					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_bimodal, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
 					
 					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_sag, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
+					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_SAg, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
 				
 					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_gag, IARG_BRANCH_TAKEN, IARG_END);
+					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_GAg, IARG_BRANCH_TAKEN, IARG_END);
 
 					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
 					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_gshare, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
+
+					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
+					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_hybrid_2, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
 				}
             }
 			// INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
@@ -349,7 +409,7 @@ VOID Trace(TRACE trace, VOID *v)
 		}
 
 		/* Called for each BBL */
-        	BBL_InsertCall(bbl, IPOINT_BEFORE, (AFUNPTR) InsCount, IARG_UINT32, BBL_NumIns(bbl), IARG_END);
+        BBL_InsertCall(bbl, IPOINT_BEFORE, (AFUNPTR) InsCount, IARG_UINT32, BBL_NumIns(bbl), IARG_END);
 	}
 }
 
@@ -376,10 +436,13 @@ int main(int argc, char *argv[])
 		out = new std::ofstream(fileName.c_str());
 
 	for(int i=0; i<BIMODAL_ROW; i++) bimodal_pht[i] = 0;
-	for(int i=0; i<SAg_BHT_ROW; i++) sag_bht[i] = 0;
-	for(int i=0; i<SAg_PHT_ROW; i++) sag_pht[i] = 0;
-	gag_ghr = 0;
-	for(int i=0; i<GAg_PHT_ROW; i++) gag_pht[i] = 0;
+	for(int i=0; i<SAg_BHT_ROW; i++) {SAg_bht[i] = 0; hybrid_2_SAg_bht[i] = 0;}
+	for(int i=0; i<SAg_PHT_ROW; i++) {SAg_pht[i] = 0; hybrid_2_SAg_pht[i] = 0;} 
+	GAg_ghr = 0; hybrid_2_GAg_ghr = 0; gshare_ghr = 0; hybrid_2_meta_ghr = 0;
+	for(int i=0; i<GAg_PHT_ROW; i++) {GAg_pht[i] = 0; hybrid_2_GAg_pht[i] = 0;}
+	for(int i=0; i<GSHARE_PHT_ROW; i++) gshare_pht[i] = 0;
+	for(int i=0; i<HYBRID_2_META_ROW; i++) hybrid_2_meta_pred[i] = 0;
+
     
 	// Register function to be called to instrument instructions
 	TRACE_AddInstrumentFunction(Trace, 0);
