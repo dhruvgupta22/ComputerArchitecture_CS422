@@ -139,11 +139,6 @@ typedef enum{
 } DIR_PRED;
 
 typedef struct{
-    UINT64 forw;
-    UINT64 back;
-} Mispred_Count;
-
-typedef struct{
 	UINT64 valid;
 	UINT64 tag;
 	UINT64 lru_state;
@@ -200,9 +195,9 @@ UINT64 icount = 0; //number of dynamically executed instructions
 UINT64 fastForwardIns; // number of instruction to fast forward
 UINT64 maxIns; // maximum number of instructions to simulate
 
-UINT64 dp_forwbr = 0;
-UINT64 dp_backbr = 0;
-Mispred_Count Mispred[DP_COUNT];
+UINT64 dp_access[2];
+UINT64 Mispred[DP_COUNT][2];
+UINT64 btb1_access = 0;
 UINT64 btb1_miss = 0;
 UINT64 btb1_mispred = 0;
 
@@ -247,21 +242,23 @@ VOID StatDump(void){
 	*out << "===============================================" << endl;
 	*out << "Direction Predictors" << endl;
 	for(int i=0; i<DP_COUNT; i++){
-		*out << pred_names[i] << " : Accesses " << (dp_forwbr + dp_backbr);
-		*out << ", Mispredictions " << (Mispred[i].forw + Mispred[i].back) ;
-		*out << " (" << (1.0*Mispred[i].forw + Mispred[i].back)/(1.0*dp_forwbr + dp_backbr) << ")";
-		*out << ", Forward Branches " << dp_forwbr;
-		*out << ", Forward Mispredictions " << Mispred[i].forw;
-		*out << " (" << (1.0*Mispred[i].forw)/(1.0*dp_forwbr) << ")";
-		*out << ", Backward Branches " << dp_backbr;
-		*out << ", Backward Mispredictions " << Mispred[i].back;
-		*out << " (" << (1.0*Mispred[i].back)/(1.0*dp_backbr) << ")";
+		*out << pred_names[i] << " : Accesses " << (dp_access[0] + dp_access[1]);
+		*out << ", Mispredictions " << (Mispred[i][0] + Mispred[i][1]) ;
+		*out << " (" << (1.0*Mispred[i][0] + Mispred[i][1])/(1.0*dp_access[0] + dp_access[1]) << ")";
+		*out << ", Forward Branches " << dp_access[0];
+		*out << ", Forward Mispredictions " << Mispred[i][0];
+		*out << " (" << (1.0*Mispred[i][0])/(1.0*dp_access[0]) << ")";
+		*out << ", Backward Branches " << dp_access[1];
+		*out << ", Backward Mispredictions " << Mispred[i][1];
+		*out << " (" << (1.0*Mispred[i][1])/(1.0*dp_access[1]) << ")";
 		*out << endl;
 	}
+	// BTB1 : Accesses 28117852, Misses 3340 (0.000118786), Mispredictions 9806418 (0.348761)
 	*out << endl;
 	*out << "===============================================" << endl;
 	*out << "Branch Target Predictors" << endl;
-	*out << endl;
+	*out << "BTB1 : Accesses "<< btb1_access << ", Misses "<< btb1_miss<< " (" << (double)(btb1_miss)/(btb1_access)<< "), Mispredictions "<< btb1_mispred <<" (" << (double)(btb1_mispred)/(btb1_access)<<")"<<endl;
+	// *out << "BTB2 : Accesses "<< btb2_access << ", Misses "<< btb2_miss<< " (" << (double)(btb2_miss)/(btb2_access)<< "), Mispredictions "<< btb2_mispred <<" (" << (double)(btb2_mispred)/(btb2_access)<<")"<<endl;
 	*out << endl;
 	*out << "===============================================" << endl;
 	endTime = chrono::high_resolution_clock::now();
@@ -270,97 +267,63 @@ VOID StatDump(void){
 	exit(0);
 }
 
-VOID FwdAccess(){
-    dp_forwbr++;
+VOID DPAccess(ADDRINT ins_addr, ADDRINT taken_addr){
+	BOOL dir = ((UINT64)taken_addr > (UINT64)ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
+	dp_access[dir]++;
 }
 
-VOID BkdAccess(){
-    dp_backbr++;
+VOID fnbt(BOOL taken, ADDRINT ins_addr, ADDRINT taken_addr){
+	BOOL dir = ((UINT64)taken_addr > (UINT64)ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
+    Mispred[FNBT][dir] += taken^dir;
 }
 
-VOID FwdMispred_FNBT(BOOL taken){
-    Mispred[FNBT].forw += taken^0;
-}
-
-VOID BkdMispred_FNBT(BOOL taken){
-    Mispred[FNBT].back += taken^1;
-}
-
-VOID FwdMispred_bimodal(BOOL taken, UINT64 pc){
+VOID bimodal(BOOL taken, ADDRINT ins_addr, ADDRINT taken_addr){
+	BOOL dir = ((UINT64)taken_addr > (UINT64)ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
+	UINT64 pc = (UINT64)ins_addr;
 	UINT64 hpc = pc%BIMODAL_ROW;
 	UINT64 counter = bimodal_pht[hpc];
 	BOOL prediction = (counter < BIMODAL_MID) ? 0 : 1;
-	Mispred[BIMODAL].forw += taken^prediction;
+	Mispred[BIMODAL][dir] += taken^prediction;
 	bimodal_pht[hpc] = (taken) ? ((counter == BIMODAL_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
 }
 
-VOID BkdMispred_bimodal(BOOL taken, UINT64 pc){
-	UINT64 hpc = pc%BIMODAL_ROW;
-	UINT64 counter = bimodal_pht[hpc];
-	BOOL prediction = (counter < BIMODAL_MID) ? 0 : 1;
-	Mispred[BIMODAL].back += taken^prediction;
-	bimodal_pht[hpc] = (taken) ? ((counter == BIMODAL_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
-}
-
-VOID FwdMispred_SAg(BOOL taken, UINT64 pc){
+VOID sag(BOOL taken, ADDRINT ins_addr, ADDRINT taken_addr){
+	BOOL dir = ((UINT64)taken_addr > (UINT64)ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
+	UINT64 pc = (UINT64)ins_addr;
 	UINT64 hpc = pc%SAg_BHT_ROW;
 	UINT64 hist = SAg_bht[hpc];
 	UINT64 counter = SAg_pht[hist];
 	BOOL prediction = (counter < SAg_MID) ? 0 : 1;
-	Mispred[SAg].forw += taken^prediction;
+	Mispred[SAg][dir] += taken^prediction;
 	SAg_pht[hist] =  (taken) ? ((counter == SAg_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
 	SAg_bht[hpc] = ((hist << 1 | (taken)) & SAg_BHT_MASK);
 }
 
-VOID BkdMispred_SAg(BOOL taken, UINT64 pc){
-	UINT64 hpc = pc%SAg_BHT_ROW;
-	UINT64 hist = SAg_bht[hpc];
-	UINT64 counter = SAg_pht[hist];
-	BOOL prediction = (counter < SAg_MID) ? 0 : 1;
-	Mispred[SAg].back += taken^prediction;
-	SAg_pht[hist] =  (taken) ? ((counter == SAg_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
-	SAg_bht[hpc] = ((hist << 1 | (taken)) & SAg_BHT_MASK);
-}
-
-VOID FwdMispred_GAg(BOOL taken){
+VOID gag(BOOL taken, ADDRINT ins_addr, ADDRINT taken_addr){
+	BOOL dir = ((UINT64)taken_addr > (UINT64)ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
 	UINT64 hist = GAg_ghr & GAg_GHR_MASK;
 	UINT64 counter = GAg_pht[hist];
 	BOOL prediction = (counter < GAg_MID) ? 0 : 1;
-	Mispred[GAg].forw += taken^prediction;
+	Mispred[GAg][dir] += taken^prediction;
 	GAg_pht[hist] =  (taken) ? ((counter == GAg_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
 	GAg_ghr = ((hist << 1 | (taken)) & GAg_GHR_MASK);
 }
 
-VOID BkdMispred_GAg(BOOL taken){
-	UINT64 hist = GAg_ghr & GAg_GHR_MASK;
-	UINT64 counter = GAg_pht[hist];
-	BOOL prediction = (counter < GAg_MID) ? 0 : 1;
-	Mispred[GAg].back += taken^prediction;
-	GAg_pht[hist] =  (taken) ? ((counter == GAg_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
-	GAg_ghr = ((hist << 1 | (taken)) & GAg_GHR_MASK);
-}
-
-VOID FwdMispred_gshare(BOOL taken, UINT64 pc){
+VOID gshare(BOOL taken, ADDRINT ins_addr, ADDRINT taken_addr){
+	BOOL dir = ((UINT64)taken_addr > (UINT64)ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
+	UINT64 pc = (UINT64)ins_addr;
 	UINT64 hist = gshare_ghr & GSHARE_GHR_MASK;
 	UINT64 hash = (hist ^ pc) & GSHARE_GHR_MASK;
 	UINT64 counter = gshare_pht[hash];
 	BOOL prediction = (counter < GSHARE_MID) ? 0 : 1;
-	Mispred[GSHARE].forw += taken^prediction;
+	Mispred[GSHARE][dir] += taken^prediction;
 	gshare_pht[hash] =  (taken) ? ((counter == GSHARE_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
 	gshare_ghr = ((hist << 1 | (taken)) & GSHARE_GHR_MASK);
 }
 
-VOID BkdMispred_gshare(BOOL taken, UINT64 pc){
-	UINT64 hist = gshare_ghr & GSHARE_GHR_MASK;
-	UINT64 hash = (hist ^ pc) & GSHARE_GHR_MASK;
-	UINT64 counter = gshare_pht[hash];
-	BOOL prediction = (counter < GSHARE_MID) ? 0 : 1;
-	Mispred[GSHARE].back += taken^prediction;
-	gshare_pht[hash] =  (taken) ? ((counter == GSHARE_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
-	gshare_ghr = ((hist << 1 | (taken)) & GSHARE_GHR_MASK);
-}
-
-VOID FwdMispred_hybrid_2(BOOL taken, UINT64 pc){
+VOID hybrid_2(BOOL taken, ADDRINT ins_addr, ADDRINT taken_addr){
+	BOOL dir = ((UINT64)taken_addr > (UINT64)ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
+	UINT64 pc = (UINT64)ins_addr;
 	UINT64 hist = hybrid_2_meta_ghr & HYBRID_2_GHR_MASK;
 	UINT64 counter = hybrid_2_meta_pred[hist];
 	BOOL choice = (counter < HYBRID_2_META_MID) ? 0 : 1;
@@ -374,8 +337,8 @@ VOID FwdMispred_hybrid_2(BOOL taken, UINT64 pc){
 	UINT64 counter2 = hybrid_2_GAg_pht[hist2];
 	BOOL prediction2 = (counter2 < HYBRID_2_GAg_MID) ? 0 : 1;
 	
-	if(choice == 0) Mispred[HYBRID_2].forw += taken^prediction1;
-	else Mispred[HYBRID_2].forw += taken^prediction2;
+	if(choice == 0) Mispred[HYBRID_2][dir] += taken^prediction1;
+	else Mispred[HYBRID_2][dir] += taken^prediction2;
 	
 	hybrid_2_SAg_pht[hist1] =  (taken) ? ((counter1 == HYBRID_2_SAg_MAX) ? counter1 : counter1+1) : ((counter1 == 0) ? 0 : counter1-1);
 	hybrid_2_SAg_bht[hpc1] = ((hist1 << 1 | (taken)) & HYBRID_2_SAg_BHT_MASK);
@@ -387,34 +350,9 @@ VOID FwdMispred_hybrid_2(BOOL taken, UINT64 pc){
 	hybrid_2_meta_ghr = ((hist << 1 | (taken)) & HYBRID_2_GHR_MASK);
 }
 
-VOID BkdMispred_hybrid_2(BOOL taken, UINT64 pc){
-	UINT64 hist = hybrid_2_meta_ghr & HYBRID_2_GHR_MASK;
-	UINT64 counter = hybrid_2_meta_pred[hist];
-	BOOL choice = (counter < HYBRID_2_META_MID) ? 0 : 1;
-
-	UINT64 hpc1 = pc%HYBRID_2_SAg_BHT_ROW;
-	UINT64 hist1 = hybrid_2_SAg_bht[hpc1];
-	UINT64 counter1 = hybrid_2_SAg_pht[hist1];
-	BOOL prediction1 = (counter1 < HYBRID_2_SAg_MID) ? 0 : 1;
-	
-	UINT64 hist2 = hybrid_2_GAg_ghr & HYBRID_2_GAg_GHR_MASK;
-	UINT64 counter2 = hybrid_2_GAg_pht[hist2];
-	BOOL prediction2 = (counter2 < HYBRID_2_GAg_MID) ? 0 : 1;
-	
-	if(choice == 0) Mispred[HYBRID_2].back += taken^prediction1;
-	else Mispred[HYBRID_2].back += taken^prediction2;
-	
-	hybrid_2_SAg_pht[hist1] =  (taken) ? ((counter1 == HYBRID_2_SAg_MAX) ? counter1 : counter1+1) : ((counter1 == 0) ? 0 : counter1-1);
-	hybrid_2_SAg_bht[hpc1] = ((hist1 << 1 | (taken)) & HYBRID_2_SAg_BHT_MASK);
-	hybrid_2_GAg_pht[hist2] =  (taken) ? ((counter2 == HYBRID_2_GAg_MAX) ? counter2 : counter2+1) : ((counter2 == 0) ? 0 : counter2-1);
-	hybrid_2_GAg_ghr = ((hist2 << 1 | (taken)) & HYBRID_2_GAg_GHR_MASK);
-	BOOL s = (taken == prediction1);
-	BOOL g = (taken == prediction2);
-	hybrid_2_meta_pred[hist] = (g & !s) ? ((counter == HYBRID_2_META_MAX) ? counter : counter+1) : ((s & !g) ? ((counter == 0) ? 0 : counter-1) : counter);
-	hybrid_2_meta_ghr = ((hist << 1 | (taken)) & HYBRID_2_GHR_MASK);
-}
-
-VOID FwdMispred_hybrid_3_maj(BOOL taken, UINT64 pc){
+VOID hybrid_3_maj(BOOL taken, ADDRINT ins_addr, ADDRINT taken_addr){
+	BOOL dir = ((UINT64)taken_addr > (UINT64)ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
+	UINT64 pc = (UINT64)ins_addr;
 	UINT64 hpc1 = pc%HYBRID_3_MAJ_SAg_BHT_ROW;
 	UINT64 hist1 = hybrid_3_maj_SAg_bht[hpc1];
 	UINT64 counter1 = hybrid_3_maj_SAg_pht[hist1];
@@ -432,7 +370,7 @@ VOID FwdMispred_hybrid_3_maj(BOOL taken, UINT64 pc){
 	UINT64 taken_votes = (UINT64) prediction1 + (UINT64) prediction2 + (UINT64) prediction3;
 	BOOL prediction = (taken_votes < 2) ? 0 : 1;
 
-	Mispred[HYBRID_3_MAJ].forw += taken^prediction;
+	Mispred[HYBRID_3_MAJ][dir] += taken^prediction;
 
 	hybrid_3_maj_SAg_pht[hist1] =  (taken) ? ((counter1 == HYBRID_3_MAJ_SAg_MAX) ? counter1 : counter1+1) : ((counter1 == 0) ? 0 : counter1-1);
 	hybrid_3_maj_SAg_bht[hpc1] = ((hist1 << 1 | (taken)) & HYBRID_3_MAJ_SAg_BHT_MASK);
@@ -442,35 +380,9 @@ VOID FwdMispred_hybrid_3_maj(BOOL taken, UINT64 pc){
 	hybrid_3_maj_gshare_ghr = ((hist3 << 1 | (taken)) & HYBRID_3_MAJ_GSHARE_GHR_MASK);
 }
 
-VOID BkdMispred_hybrid_3_maj(BOOL taken, UINT64 pc){
-	UINT64 hpc1 = pc%HYBRID_3_MAJ_SAg_BHT_ROW;
-	UINT64 hist1 = hybrid_3_maj_SAg_bht[hpc1];
-	UINT64 counter1 = hybrid_3_maj_SAg_pht[hist1];
-	BOOL prediction1 = (counter1 < HYBRID_3_MAJ_SAg_MID) ? 0 : 1;
-	
-	UINT64 hist2 = hybrid_3_maj_GAg_ghr & HYBRID_3_MAJ_GAg_GHR_MASK;
-	UINT64 counter2 = hybrid_3_maj_GAg_pht[hist2];
-	BOOL prediction2 = (counter2 < HYBRID_3_MAJ_GAg_MID) ? 0 : 1;
-
-	UINT64 hist3 = hybrid_3_maj_gshare_ghr & HYBRID_3_MAJ_GSHARE_GHR_MASK;
-	UINT64 hash3 = (hist3 ^ pc) & HYBRID_3_MAJ_GSHARE_GHR_MASK;
-	UINT64 counter3 = hybrid_3_maj_gshare_pht[hash3];
-	BOOL prediction3 = (counter3 < HYBRID_3_MAJ_GSHARE_MID) ? 0 : 1;
-
-	UINT64 taken_votes = (UINT64) prediction1 + (UINT64) prediction2 + (UINT64) prediction3;
-	BOOL prediction = (taken_votes < 2) ? 0 : 1;
-
-	Mispred[HYBRID_3_MAJ].back += taken^prediction;
-
-	hybrid_3_maj_SAg_pht[hist1] =  (taken) ? ((counter1 == HYBRID_3_MAJ_SAg_MAX) ? counter1 : counter1+1) : ((counter1 == 0) ? 0 : counter1-1);
-	hybrid_3_maj_SAg_bht[hpc1] = ((hist1 << 1 | (taken)) & HYBRID_3_MAJ_SAg_BHT_MASK);
-	hybrid_3_maj_GAg_pht[hist2] =  (taken) ? ((counter2 == HYBRID_3_MAJ_GAg_MAX) ? counter2 : counter2+1) : ((counter2 == 0) ? 0 : counter2-1);
-	hybrid_3_maj_GAg_ghr = ((hist2 << 1 | (taken)) & HYBRID_3_MAJ_GAg_GHR_MASK);
-	hybrid_3_maj_gshare_pht[hash3] =  (taken) ? ((counter3 == HYBRID_3_MAJ_GSHARE_MAX) ? counter3 : counter3+1) : ((counter3 == 0) ? 0 : counter3-1);
-	hybrid_3_maj_gshare_ghr = ((hist3 << 1 | (taken)) & HYBRID_3_MAJ_GSHARE_GHR_MASK);
-}
-
-VOID FwdMispred_hybrid_3(BOOL taken, UINT64 pc){
+VOID hybrid_3(BOOL taken, ADDRINT ins_addr, ADDRINT taken_addr){
+	BOOL dir = ((UINT64)taken_addr > (UINT64)ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
+	UINT64 pc = (UINT64)ins_addr;
 	UINT64 hpc1 = pc%HYBRID_3_SAg_BHT_ROW;
 	UINT64 hist1 = hybrid_3_SAg_bht[hpc1];
 	UINT64 counter1 = hybrid_3_SAg_pht[hist1];
@@ -498,54 +410,7 @@ VOID FwdMispred_hybrid_3(BOOL taken, UINT64 pc){
 	BOOL choice6 = (counter6 < HYBRID_3_META3_MID) ? 0 : 1; // 0 = SAg, 1 = gshare
 
 	BOOL prediction = (choice4) ? ((choice5) ? (prediction3) : (prediction2)) : ((choice6) ? (prediction3) : (prediction1)); 
-	Mispred[HYBRID_3].forw += taken^prediction;
-	
-	hybrid_3_SAg_pht[hist1] =  (taken) ? ((counter1 == HYBRID_3_SAg_MAX) ? counter1 : counter1+1) : ((counter1 == 0) ? 0 : counter1-1);
-	hybrid_3_SAg_bht[hpc1] = ((hist1 << 1 | (taken)) & HYBRID_3_SAg_BHT_MASK);
-	hybrid_3_GAg_pht[hist2] =  (taken) ? ((counter2 == HYBRID_3_GAg_MAX) ? counter2 : counter2+1) : ((counter2 == 0) ? 0 : counter2-1);
-	hybrid_3_GAg_ghr = ((hist2 << 1 | (taken)) & HYBRID_3_GAg_GHR_MASK);
-	hybrid_3_gshare_pht[hash3] =  (taken) ? ((counter3 == HYBRID_3_GSHARE_MAX) ? counter3 : counter3+1) : ((counter3 == 0) ? 0 : counter3-1);
-	hybrid_3_gshare_ghr = ((hist3 << 1 | (taken)) & HYBRID_3_GSHARE_GHR_MASK);
-	BOOL s = (taken == prediction1);
-	BOOL g = (taken == prediction2);
-	BOOL r = (taken == prediction3); 
-	hybrid_3_meta1_pred[hist4] = (g & !s) ? ((counter4 == HYBRID_3_META1_MAX) ? counter4 : counter4+1) : ((s & !g) ? ((counter4 == 0) ? 0 : counter4-1) : counter4);
-	hybrid_3_meta1_ghr = ((hist4 << 1 | (taken)) & HYBRID_3_GHR1_MASK);
-	hybrid_3_meta2_pred[hist5] = (r & !g) ? ((counter5 == HYBRID_3_META2_MAX) ? counter5 : counter5+1) : ((g & !r) ? ((counter5 == 0) ? 0 : counter5-1) : counter5);
-	hybrid_3_meta2_ghr = ((hist5 << 1 | (taken)) & HYBRID_3_GHR2_MASK);
-	hybrid_3_meta3_pred[hist6] = (r & !s) ? ((counter6 == HYBRID_3_META3_MAX) ? counter6 : counter6+1) : ((s & !r) ? ((counter6 == 0) ? 0 : counter6-1) : counter6);
-	hybrid_3_meta3_ghr = ((hist6 << 1 | (taken)) & HYBRID_3_GHR3_MASK);
-}
-
-VOID BkdMispred_hybrid_3(BOOL taken, UINT64 pc){
-	UINT64 hpc1 = pc%HYBRID_3_SAg_BHT_ROW;
-	UINT64 hist1 = hybrid_3_SAg_bht[hpc1];
-	UINT64 counter1 = hybrid_3_SAg_pht[hist1];
-	BOOL prediction1 = (counter1 < HYBRID_3_SAg_MID) ? 0 : 1;
-	
-	UINT64 hist2 = hybrid_3_GAg_ghr & HYBRID_3_GAg_GHR_MASK;
-	UINT64 counter2 = hybrid_3_GAg_pht[hist2];
-	BOOL prediction2 = (counter2 < HYBRID_3_GAg_MID) ? 0 : 1;
-
-	UINT64 hist3 = hybrid_3_gshare_ghr & HYBRID_3_GSHARE_GHR_MASK;
-	UINT64 hash3 = (hist3 ^ pc) & HYBRID_3_GSHARE_GHR_MASK;
-	UINT64 counter3 = hybrid_3_gshare_pht[hash3];
-	BOOL prediction3 = (counter3 < HYBRID_3_GSHARE_MID) ? 0 : 1;
-
-	UINT64 hist4 = hybrid_3_meta1_ghr & HYBRID_3_GHR1_MASK;
-	UINT64 counter4 = hybrid_3_meta1_pred[hist4];
-	BOOL choice4 = (counter4 < HYBRID_3_META1_MID) ? 0 : 1; // 0 = SAg, 1 = GAg
-
-	UINT64 hist5 = hybrid_3_meta2_ghr & HYBRID_3_GHR2_MASK;
-	UINT64 counter5 = hybrid_3_meta2_pred[hist5];
-	BOOL choice5 = (counter5 < HYBRID_3_META2_MID) ? 0 : 1; // 0 = GAg, 1 = gshare
-
-	UINT64 hist6 = hybrid_3_meta3_ghr & HYBRID_3_GHR3_MASK;
-	UINT64 counter6 = hybrid_3_meta3_pred[hist6];
-	BOOL choice6 = (counter6 < HYBRID_3_META3_MID) ? 0 : 1; // 0 = SAg, 1 = gshare
-
-	BOOL prediction = (choice4) ? ((choice5) ? (prediction3) : (prediction2)) : ((choice6) ? (prediction3) : (prediction1)); 
-	Mispred[HYBRID_3].back += taken^prediction;
+	Mispred[HYBRID_3][dir] += taken^prediction;
 	
 	hybrid_3_SAg_pht[hist1] =  (taken) ? ((counter1 == HYBRID_3_SAg_MAX) ? counter1 : counter1+1) : ((counter1 == 0) ? 0 : counter1-1);
 	hybrid_3_SAg_bht[hpc1] = ((hist1 << 1 | (taken)) & HYBRID_3_SAg_BHT_MASK);
@@ -565,6 +430,7 @@ VOID BkdMispred_hybrid_3(BOOL taken, UINT64 pc){
 }
 
 VOID BTB1(ADDRINT taken_addr, UINT64 pc, UINT64 next_pc){
+	btb1_access++;
 	UINT64 set = pc&(BTB1_NUM_SETS-1);
 	UINT64 tag = pc >> BTB1_INDEX_BITS;
 	int hit = -1;
@@ -595,7 +461,7 @@ VOID BTB1(ADDRINT taken_addr, UINT64 pc, UINT64 next_pc){
 			assert(idx != -1);
 			btb1[set][idx].valid = 1;
 			btb1[set][idx].tag = tag;
-			btb1[set][idx].lru_state = 4;
+			btb1[set][idx].lru_state = BTB1_NUM_WAYS;
 			btb1[set][idx].target = taken_addr;
 	
 			for(int j = 0; j < BTB1_NUM_WAYS; j++){
@@ -606,21 +472,36 @@ VOID BTB1(ADDRINT taken_addr, UINT64 pc, UINT64 next_pc){
 		}
 		else{
 			if((UINT64)taken_addr == next_pc){
-				// Invalidate
+				UINT64 lru = btb1[set][hit].lru_state;
+				for(int i=0; i<BTB1_NUM_WAYS; i++){
+					if(btb1[set][i].lru_state < lru) btb1[set][i].lru_state++;
+				}
+				btb1[set][hit].valid = 0;
 			}
 			else{
-				// Fill it
+				btb1[set][hit].target = taken_addr;
+				UINT64 lru = btb1[set][hit].lru_state;
+				for(int i=0; i<BTB1_NUM_WAYS; i++){
+					if(btb1[set][i].lru_state > lru) btb1[set][i].lru_state--;
+				}
+				btb1[set][hit].lru_state = BTB1_NUM_WAYS;
 			}
 		}
 
 	}
 	else{
 		if(hit != -1){
-			// update LRU order 
+			UINT64 lru = btb1[set][hit].lru_state;
+			for(int i=0; i<BTB1_NUM_WAYS; i++){
+				if(btb1[set][i].lru_state > lru) btb1[set][i].lru_state--;
+			}
+			btb1[set][hit].lru_state = BTB1_NUM_WAYS;
 		}
 	}
-	
+}
 
+VOID BTB2(ADDRINT taken_addr, UINT64 pc, UINT64 next_pc){
+	
 }
 
 /* Instruction instrumentation routine */
@@ -639,65 +520,32 @@ VOID Trace(TRACE trace, VOID *v)
 			ADDRINT ins_addr = INS_Address(ins);
 			UINT64 pc = (UINT64)ins_addr;
             if(INS_Category(ins) == XED_CATEGORY_COND_BR){
-                ADDRINT taken_addr = INS_DirectControlFlowTargetAddress(ins);
-                if(taken_addr > ins_addr){
-                    INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-			        INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdAccess, IARG_END); 
-                    
-                    INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-			        INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_FNBT, IARG_BRANCH_TAKEN, IARG_END);
-
-					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_bimodal, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
-					
-					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_SAg, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
-
-					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_GAg, IARG_BRANCH_TAKEN, IARG_END);
-					
-					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_gshare, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
-
-					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_hybrid_2, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
-					
-					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_hybrid_3_maj, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
+				INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
+				INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) DPAccess, IARG_BRANCH_TAKEN, IARG_INST_PTR, IARG_BRANCH_TARGET_ADDR, IARG_END); 
 				
-					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_hybrid_3, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
-				
-				}
-                else{
-                    INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-			        INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdAccess, IARG_END); 
+				INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
+				INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) fnbt, IARG_BRANCH_TAKEN, IARG_INST_PTR, IARG_BRANCH_TARGET_ADDR, IARG_END);
 
-                    INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-			        INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_FNBT, IARG_BRANCH_TAKEN, IARG_END);
-
-					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_bimodal, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
-					
-					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_SAg, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
+				INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
+				INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) bimodal, IARG_BRANCH_TAKEN, IARG_INST_PTR, IARG_BRANCH_TARGET_ADDR, IARG_END);
 				
-					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_GAg, IARG_BRANCH_TAKEN, IARG_END);
+				INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
+				INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) sag, IARG_BRANCH_TAKEN, IARG_INST_PTR, IARG_BRANCH_TARGET_ADDR, IARG_END);
 
-					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_gshare, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
+				INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
+				INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) gag, IARG_BRANCH_TAKEN, IARG_INST_PTR, IARG_BRANCH_TARGET_ADDR, IARG_END);
+				
+				INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
+				INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) gshare, IARG_BRANCH_TAKEN, IARG_INST_PTR, IARG_BRANCH_TARGET_ADDR, IARG_END);
 
-					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_hybrid_2, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
+				INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
+				INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) hybrid_2, IARG_BRANCH_TAKEN, IARG_INST_PTR, IARG_BRANCH_TARGET_ADDR, IARG_END);
 				
-					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_hybrid_3_maj, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
-					
-					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_hybrid_3, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
-				
-				}
+				INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
+				INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) hybrid_3_maj, IARG_BRANCH_TAKEN, IARG_INST_PTR, IARG_BRANCH_TARGET_ADDR, IARG_END);
+			
+				INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
+				INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) hybrid_3, IARG_BRANCH_TAKEN, IARG_INST_PTR, IARG_BRANCH_TARGET_ADDR, IARG_END);
             }
 			else if(INS_IsIndirectControlFlow(ins)){
 				UINT64 next_pc = (UINT64) INS_Address(INS_Next(ins));
@@ -746,6 +594,8 @@ int main(int argc, char *argv[])
 	if (!fileName.empty())
 		out = new std::ofstream(fileName.c_str());
 
+	MEMSET0(dp_access);
+	MEMSET0(Mispred);
 	MEMSET0(bimodal_pht);
 	MEMSET0(SAg_bht);
 	MEMSET0(SAg_pht);
