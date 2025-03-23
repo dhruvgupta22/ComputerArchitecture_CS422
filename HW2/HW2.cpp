@@ -118,19 +118,13 @@ chrono::time_point<chrono::high_resolution_clock> startTime, endTime;
 #define HYBRID_3_META3_MID (1 << (HYBRID_3_META3_COL-1))
 #define HYBRID_3_META3_MAX ((1 << (HYBRID_3_META3_COL))-1)
 
+#define BTB1_INDEX_BITS 7
+#define BTB1_NUM_SETS (1 << (BTB1_INDEX_BITS))
+#define BTB1_NUM_WAYS 4
+
 #define MEMSET0(arr) do { \
 	memset(arr, 0, sizeof(arr)); \
 } while (0)
-
-typedef enum{
-    INS_DIRECT_CALL=0,
-	INS_INDIRECT_CALL,
-	INS_RETURN,
-	INS_UNCOND_BRANCH,
-	INS_COND_BRANCH,
-    INS_OTHERS,
-	INS_COUNT
-} INS_CATEGORY;
 
 typedef enum{
     FNBT=0,
@@ -148,6 +142,13 @@ typedef struct{
     UINT64 forw;
     UINT64 back;
 } Mispred_Count;
+
+typedef struct{
+	UINT64 valid;
+	UINT64 tag;
+	UINT64 lru_state;
+	UINT64 target;	
+} BTB_Entry;
 
 /* Global variables */
 std::ostream * out = &cerr;
@@ -190,6 +191,9 @@ UINT64 hybrid_3_meta2_pred[HYBRID_3_META2_ROW];
 UINT64 hybrid_3_meta3_ghr;
 UINT64 hybrid_3_meta3_pred[HYBRID_3_META3_ROW];
 
+BTB_Entry btb1[BTB1_NUM_SETS][BTB1_NUM_WAYS];
+
+
 ADDRINT fastForwardDone = 0;
 UINT64 icount = 0; //number of dynamically executed instructions
 
@@ -199,6 +203,8 @@ UINT64 maxIns; // maximum number of instructions to simulate
 UINT64 dp_forwbr = 0;
 UINT64 dp_backbr = 0;
 Mispred_Count Mispred[DP_COUNT];
+UINT64 btb1_miss = 0;
+UINT64 btb1_mispred = 0;
 
 /* Command line switches */
 KNOB<string> KnobOutputFile(KNOB_MODE_WRITEONCE, "pintool", "o", "HW2.out", "specify file name for HW2 output");
@@ -435,6 +441,7 @@ VOID FwdMispred_hybrid_3_maj(BOOL taken, UINT64 pc){
 	hybrid_3_maj_gshare_pht[hash3] =  (taken) ? ((counter3 == HYBRID_3_MAJ_GSHARE_MAX) ? counter3 : counter3+1) : ((counter3 == 0) ? 0 : counter3-1);
 	hybrid_3_maj_gshare_ghr = ((hist3 << 1 | (taken)) & HYBRID_3_MAJ_GSHARE_GHR_MASK);
 }
+
 VOID BkdMispred_hybrid_3_maj(BOOL taken, UINT64 pc){
 	UINT64 hpc1 = pc%HYBRID_3_MAJ_SAg_BHT_ROW;
 	UINT64 hist1 = hybrid_3_maj_SAg_bht[hpc1];
@@ -557,14 +564,71 @@ VOID BkdMispred_hybrid_3(BOOL taken, UINT64 pc){
 	hybrid_3_meta3_ghr = ((hist6 << 1 | (taken)) & HYBRID_3_GHR3_MASK);
 }
 
+VOID BTB1(ADDRINT taken_addr, UINT64 pc, UINT64 next_pc){
+	UINT64 set = pc&(BTB1_NUM_SETS-1);
+	UINT64 tag = pc >> BTB1_INDEX_BITS;
+	int hit = -1;
+	for(int i = 0; i < BTB1_NUM_WAYS; i++){
+		if(btb1[set][i].valid == 1 && btb1[set][i].tag == tag){ 
+			hit = i; 
+			break;
+		}
+	}
+	UINT64 prediction = (hit != -1) ? btb1[set][hit].target : next_pc;
+
+	if(hit == -1) btb1_miss++;
+
+	if(prediction != (UINT64)taken_addr){
+		btb1_mispred++;
+
+		if(hit == -1){
+			int idx = -1;
+			for(int i = 0; i < BTB1_NUM_WAYS; i++){
+				if(btb1[set][i].valid == 0){
+					idx = i;
+					break;
+				}
+				else if(btb1[set][i].lru_state == 1){
+					idx = i;
+				}
+			}
+			assert(idx != -1);
+			btb1[set][idx].valid = 1;
+			btb1[set][idx].tag = tag;
+			btb1[set][idx].lru_state = 4;
+			btb1[set][idx].target = taken_addr;
+	
+			for(int j = 0; j < BTB1_NUM_WAYS; j++){
+				if(j != idx && btb1[set][j].valid != 0){
+					btb1[set][j].lru_state--;
+				}
+			}
+		}
+		else{
+			if((UINT64)taken_addr == next_pc){
+				// Invalidate
+			}
+			else{
+				// Fill it
+			}
+		}
+
+	}
+	else{
+		if(hit != -1){
+			// update LRU order 
+		}
+	}
+	
+
+}
+
 /* Instruction instrumentation routine */
 VOID Trace(TRACE trace, VOID *v)
 {
-	INS_CATEGORY category;
-
 	for (BBL bbl = TRACE_BblHead(trace); BBL_Valid(bbl); bbl = BBL_Next(bbl)) {
 		BBL_InsertIfCall(bbl, IPOINT_BEFORE, (AFUNPTR) Terminate, IARG_END);
-        	BBL_InsertThenCall(bbl, IPOINT_BEFORE, (AFUNPTR) StatDump, IARG_END);
+        BBL_InsertThenCall(bbl, IPOINT_BEFORE, (AFUNPTR) StatDump, IARG_END);
 
 		BBL_InsertIfCall(bbl, IPOINT_BEFORE, (AFUNPTR) FastForward, IARG_END);
 		BBL_InsertThenCall(bbl, IPOINT_BEFORE, (AFUNPTR) FastForwardDone, IARG_END);
@@ -572,41 +636,10 @@ VOID Trace(TRACE trace, VOID *v)
 		for (INS ins = BBL_InsHead(bbl); ; ins = INS_Next(ins)) {
 
 			/* Calculate instruction type */
-			switch (INS_Category(ins))
-			{
-
-				case XED_CATEGORY_CALL:
-					if (INS_IsDirectCall(ins)) category = INS_DIRECT_CALL;
-					else category = INS_INDIRECT_CALL;
-					break;
-
-				case XED_CATEGORY_RET:
-					category = INS_RETURN;
-					break;
-
-				case XED_CATEGORY_UNCOND_BR:
-					category = INS_UNCOND_BRANCH;
-					break;
-
-				case XED_CATEGORY_COND_BR:
-					category = INS_COND_BRANCH;
-					break;
-
-				default:
-                    category = INS_OTHERS;
-					break;
-			}
-
-			// /* Create a list for analysis arguments */
-			// IARGLIST args = IARGLIST_Alloc();
-
-			// /* Add category as the first argument to analysis routine */
-			// IARGLIST_AddArguments(args, IARG_UINT32, category, IARG_END);
-
-            if(category == INS_COND_BRANCH){
-				ADDRINT ins_addr = INS_Address(ins);
+			ADDRINT ins_addr = INS_Address(ins);
+			UINT64 pc = (UINT64)ins_addr;
+            if(INS_Category(ins) == XED_CATEGORY_COND_BR){
                 ADDRINT taken_addr = INS_DirectControlFlowTargetAddress(ins);
-				UINT64 pc = (UINT64)ins_addr;
                 if(taken_addr > ins_addr){
                     INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
 			        INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdAccess, IARG_END); 
@@ -666,6 +699,14 @@ VOID Trace(TRACE trace, VOID *v)
 				
 				}
             }
+			else if(INS_IsIndirectControlFlow(ins)){
+				UINT64 next_pc = (UINT64) INS_Address(INS_Next(ins));
+				INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
+				INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BTB1, IARG_BRANCH_TARGET_ADDR, IARG_UINT64, pc, IARG_UINT64, next_pc, IARG_END); 
+
+				// INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
+				// INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BTB2, IARG_END); 
+			}
 			// INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
 			// INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) <FuncName>, IARG_IARGLIST, args, IARG_END);
 
@@ -736,6 +777,9 @@ int main(int argc, char *argv[])
 	MEMSET0(hybrid_3_meta2_pred);
 	hybrid_3_meta3_ghr = 0;
 	MEMSET0(hybrid_3_meta3_pred);
+
+	MEMSET0(btb1);
+	// MEMSET0(btb2);
 
 	// Register function to be called to instrument instructions
 	TRACE_AddInstrumentFunction(Trace, 0);
