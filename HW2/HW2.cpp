@@ -5,8 +5,10 @@
 #include <cstdlib>
 #include <algorithm>
 #include <unordered_map>
+#include <chrono>
 
 using namespace std;
+chrono::time_point<chrono::high_resolution_clock> startTime, endTime;
 
 /* Macro and type definitions */
 #define BILLION 1000000000
@@ -78,9 +80,47 @@ using namespace std;
 #define HYBRID_3_MAJ_GSHARE_MID (1 << (HYBRID_3_MAJ_GSHARE_PHT_COL-1))
 #define HYBRID_3_MAJ_GSHARE_MAX ((1 << (HYBRID_3_MAJ_GSHARE_PHT_COL))-1)
 
+#define HYBRID_3_SAg_BHT_ROW 1024
+#define HYBRID_3_SAg_BHT_COL 9
+#define HYBRID_3_SAg_BHT_MASK ((1 << HYBRID_3_SAg_BHT_COL)-1)
+#define HYBRID_3_SAg_PHT_ROW 512
+#define HYBRID_3_SAg_PHT_COL 2
+#define HYBRID_3_SAg_MID (1 << (HYBRID_3_SAg_PHT_COL-1))
+#define HYBRID_3_SAg_MAX ((1 << (HYBRID_3_SAg_PHT_COL))-1)
+#define HYBRID_3_GAg_GHR_SIZE 9
+#define HYBRID_3_GAg_GHR_MASK ((1 << HYBRID_3_GAg_GHR_SIZE)-1)
+#define HYBRID_3_GAg_PHT_ROW 512
+#define HYBRID_3_GAg_PHT_COL 3
+#define HYBRID_3_GAg_MID (1 << (HYBRID_3_GAg_PHT_COL-1))
+#define HYBRID_3_GAg_MAX ((1 << (HYBRID_3_GAg_PHT_COL))-1)
+#define HYBRID_3_GSHARE_GHR_SIZE 9
+#define HYBRID_3_GSHARE_GHR_MASK ((1 << HYBRID_3_GSHARE_GHR_SIZE)-1)
+#define HYBRID_3_GSHARE_PHT_ROW 512
+#define HYBRID_3_GSHARE_PHT_COL 3
+#define HYBRID_3_GSHARE_MID (1 << (HYBRID_3_GSHARE_PHT_COL-1))
+#define HYBRID_3_GSHARE_MAX ((1 << (HYBRID_3_GSHARE_PHT_COL))-1)
+#define HYBRID_3_GHR1_SIZE 9
+#define HYBRID_3_GHR1_MASK ((1 << HYBRID_3_GHR1_SIZE)-1)
+#define HYBRID_3_META1_ROW 512
+#define HYBRID_3_META1_COL 2
+#define HYBRID_3_META1_MID (1 << (HYBRID_3_META1_COL-1))
+#define HYBRID_3_META1_MAX ((1 << (HYBRID_3_META1_COL))-1)
+#define HYBRID_3_GHR2_SIZE 9
+#define HYBRID_3_GHR2_MASK ((1 << HYBRID_3_GHR2_SIZE)-1)
+#define HYBRID_3_META2_ROW 512
+#define HYBRID_3_META2_COL 2
+#define HYBRID_3_META2_MID (1 << (HYBRID_3_META2_COL-1))
+#define HYBRID_3_META2_MAX ((1 << (HYBRID_3_META2_COL))-1)
+#define HYBRID_3_GHR3_SIZE 9
+#define HYBRID_3_GHR3_MASK ((1 << HYBRID_3_GHR3_SIZE)-1)
+#define HYBRID_3_META3_ROW 512
+#define HYBRID_3_META3_COL 2
+#define HYBRID_3_META3_MID (1 << (HYBRID_3_META3_COL-1))
+#define HYBRID_3_META3_MAX ((1 << (HYBRID_3_META3_COL))-1)
 
-
-
+#define MEMSET0(arr) do { \
+	memset(arr, 0, sizeof(arr)); \
+} while (0)
 
 typedef enum{
     INS_DIRECT_CALL=0,
@@ -137,6 +177,19 @@ UINT64 hybrid_3_maj_GAg_pht[HYBRID_3_MAJ_GAg_PHT_ROW];
 UINT64 hybrid_3_maj_gshare_ghr;
 UINT64 hybrid_3_maj_gshare_pht[HYBRID_3_MAJ_GSHARE_PHT_ROW];
 
+UINT64 hybrid_3_SAg_bht[HYBRID_3_SAg_BHT_ROW];
+UINT64 hybrid_3_SAg_pht[HYBRID_3_SAg_PHT_ROW];
+UINT64 hybrid_3_GAg_ghr;
+UINT64 hybrid_3_GAg_pht[HYBRID_3_GAg_PHT_ROW];
+UINT64 hybrid_3_gshare_ghr;
+UINT64 hybrid_3_gshare_pht[HYBRID_3_GSHARE_PHT_ROW];
+UINT64 hybrid_3_meta1_ghr;
+UINT64 hybrid_3_meta1_pred[HYBRID_3_META1_ROW];
+UINT64 hybrid_3_meta2_ghr;
+UINT64 hybrid_3_meta2_pred[HYBRID_3_META2_ROW];
+UINT64 hybrid_3_meta3_ghr;
+UINT64 hybrid_3_meta3_pred[HYBRID_3_META3_ROW];
+
 ADDRINT fastForwardDone = 0;
 UINT64 icount = 0; //number of dynamically executed instructions
 
@@ -189,13 +242,13 @@ VOID StatDump(void){
 	*out << "Direction Predictors" << endl;
 	for(int i=0; i<DP_COUNT; i++){
 		*out << pred_names[i] << " : Accesses " << (dp_forwbr + dp_backbr);
-		*out << " Mispredictions " << (Mispred[i].forw + Mispred[i].back) ;
+		*out << ", Mispredictions " << (Mispred[i].forw + Mispred[i].back) ;
 		*out << " (" << (1.0*Mispred[i].forw + Mispred[i].back)/(1.0*dp_forwbr + dp_backbr) << ")";
-		*out << " Forward Branches " << dp_forwbr;
-		*out << " Forward Mispredictions " << Mispred[i].forw;
+		*out << ", Forward Branches " << dp_forwbr;
+		*out << ", Forward Mispredictions " << Mispred[i].forw;
 		*out << " (" << (1.0*Mispred[i].forw)/(1.0*dp_forwbr) << ")";
-		*out << " Backward Branches " << dp_backbr;
-		*out << " Backward Mispredictions " << Mispred[i].back;
+		*out << ", Backward Branches " << dp_backbr;
+		*out << ", Backward Mispredictions " << Mispred[i].back;
 		*out << " (" << (1.0*Mispred[i].back)/(1.0*dp_backbr) << ")";
 		*out << endl;
 	}
@@ -205,6 +258,9 @@ VOID StatDump(void){
 	*out << endl;
 	*out << endl;
 	*out << "===============================================" << endl;
+	endTime = chrono::high_resolution_clock::now();
+    chrono::duration<double> elapsed = endTime - startTime;
+    *out << "Time taken : " << elapsed.count() << " seconds." << endl;
 	exit(0);
 }
 
@@ -407,6 +463,100 @@ VOID BkdMispred_hybrid_3_maj(BOOL taken, UINT64 pc){
 	hybrid_3_maj_gshare_ghr = ((hist3 << 1 | (taken)) & HYBRID_3_MAJ_GSHARE_GHR_MASK);
 }
 
+VOID FwdMispred_hybrid_3(BOOL taken, UINT64 pc){
+	UINT64 hpc1 = pc%HYBRID_3_SAg_BHT_ROW;
+	UINT64 hist1 = hybrid_3_SAg_bht[hpc1];
+	UINT64 counter1 = hybrid_3_SAg_pht[hist1];
+	BOOL prediction1 = (counter1 < HYBRID_3_SAg_MID) ? 0 : 1;
+	
+	UINT64 hist2 = hybrid_3_GAg_ghr & HYBRID_3_GAg_GHR_MASK;
+	UINT64 counter2 = hybrid_3_GAg_pht[hist2];
+	BOOL prediction2 = (counter2 < HYBRID_3_GAg_MID) ? 0 : 1;
+
+	UINT64 hist3 = hybrid_3_gshare_ghr & HYBRID_3_GSHARE_GHR_MASK;
+	UINT64 hash3 = (hist3 ^ pc) & HYBRID_3_GSHARE_GHR_MASK;
+	UINT64 counter3 = hybrid_3_gshare_pht[hash3];
+	BOOL prediction3 = (counter3 < HYBRID_3_GSHARE_MID) ? 0 : 1;
+
+	UINT64 hist4 = hybrid_3_meta1_ghr & HYBRID_3_GHR1_MASK;
+	UINT64 counter4 = hybrid_3_meta1_pred[hist4];
+	BOOL choice4 = (counter4 < HYBRID_3_META1_MID) ? 0 : 1; // 0 = SAg, 1 = GAg
+
+	UINT64 hist5 = hybrid_3_meta2_ghr & HYBRID_3_GHR2_MASK;
+	UINT64 counter5 = hybrid_3_meta2_pred[hist5];
+	BOOL choice5 = (counter5 < HYBRID_3_META2_MID) ? 0 : 1; // 0 = GAg, 1 = gshare
+
+	UINT64 hist6 = hybrid_3_meta3_ghr & HYBRID_3_GHR3_MASK;
+	UINT64 counter6 = hybrid_3_meta3_pred[hist6];
+	BOOL choice6 = (counter6 < HYBRID_3_META3_MID) ? 0 : 1; // 0 = SAg, 1 = gshare
+
+	BOOL prediction = (choice4) ? ((choice5) ? (prediction3) : (prediction2)) : ((choice6) ? (prediction3) : (prediction1)); 
+	Mispred[HYBRID_3].forw += taken^prediction;
+	
+	hybrid_3_SAg_pht[hist1] =  (taken) ? ((counter1 == HYBRID_3_SAg_MAX) ? counter1 : counter1+1) : ((counter1 == 0) ? 0 : counter1-1);
+	hybrid_3_SAg_bht[hpc1] = ((hist1 << 1 | (taken)) & HYBRID_3_SAg_BHT_MASK);
+	hybrid_3_GAg_pht[hist2] =  (taken) ? ((counter2 == HYBRID_3_GAg_MAX) ? counter2 : counter2+1) : ((counter2 == 0) ? 0 : counter2-1);
+	hybrid_3_GAg_ghr = ((hist2 << 1 | (taken)) & HYBRID_3_GAg_GHR_MASK);
+	hybrid_3_gshare_pht[hash3] =  (taken) ? ((counter3 == HYBRID_3_GSHARE_MAX) ? counter3 : counter3+1) : ((counter3 == 0) ? 0 : counter3-1);
+	hybrid_3_gshare_ghr = ((hist3 << 1 | (taken)) & HYBRID_3_GSHARE_GHR_MASK);
+	BOOL s = (taken == prediction1);
+	BOOL g = (taken == prediction2);
+	BOOL r = (taken == prediction3); 
+	hybrid_3_meta1_pred[hist4] = (g & !s) ? ((counter4 == HYBRID_3_META1_MAX) ? counter4 : counter4+1) : ((s & !g) ? ((counter4 == 0) ? 0 : counter4-1) : counter4);
+	hybrid_3_meta1_ghr = ((hist4 << 1 | (taken)) & HYBRID_3_GHR1_MASK);
+	hybrid_3_meta2_pred[hist5] = (r & !g) ? ((counter5 == HYBRID_3_META2_MAX) ? counter5 : counter5+1) : ((g & !r) ? ((counter5 == 0) ? 0 : counter5-1) : counter5);
+	hybrid_3_meta2_ghr = ((hist5 << 1 | (taken)) & HYBRID_3_GHR2_MASK);
+	hybrid_3_meta3_pred[hist6] = (r & !s) ? ((counter6 == HYBRID_3_META3_MAX) ? counter6 : counter6+1) : ((s & !r) ? ((counter6 == 0) ? 0 : counter6-1) : counter6);
+	hybrid_3_meta3_ghr = ((hist6 << 1 | (taken)) & HYBRID_3_GHR3_MASK);
+}
+
+VOID BkdMispred_hybrid_3(BOOL taken, UINT64 pc){
+	UINT64 hpc1 = pc%HYBRID_3_SAg_BHT_ROW;
+	UINT64 hist1 = hybrid_3_SAg_bht[hpc1];
+	UINT64 counter1 = hybrid_3_SAg_pht[hist1];
+	BOOL prediction1 = (counter1 < HYBRID_3_SAg_MID) ? 0 : 1;
+	
+	UINT64 hist2 = hybrid_3_GAg_ghr & HYBRID_3_GAg_GHR_MASK;
+	UINT64 counter2 = hybrid_3_GAg_pht[hist2];
+	BOOL prediction2 = (counter2 < HYBRID_3_GAg_MID) ? 0 : 1;
+
+	UINT64 hist3 = hybrid_3_gshare_ghr & HYBRID_3_GSHARE_GHR_MASK;
+	UINT64 hash3 = (hist3 ^ pc) & HYBRID_3_GSHARE_GHR_MASK;
+	UINT64 counter3 = hybrid_3_gshare_pht[hash3];
+	BOOL prediction3 = (counter3 < HYBRID_3_GSHARE_MID) ? 0 : 1;
+
+	UINT64 hist4 = hybrid_3_meta1_ghr & HYBRID_3_GHR1_MASK;
+	UINT64 counter4 = hybrid_3_meta1_pred[hist4];
+	BOOL choice4 = (counter4 < HYBRID_3_META1_MID) ? 0 : 1; // 0 = SAg, 1 = GAg
+
+	UINT64 hist5 = hybrid_3_meta2_ghr & HYBRID_3_GHR2_MASK;
+	UINT64 counter5 = hybrid_3_meta2_pred[hist5];
+	BOOL choice5 = (counter5 < HYBRID_3_META2_MID) ? 0 : 1; // 0 = GAg, 1 = gshare
+
+	UINT64 hist6 = hybrid_3_meta3_ghr & HYBRID_3_GHR3_MASK;
+	UINT64 counter6 = hybrid_3_meta3_pred[hist6];
+	BOOL choice6 = (counter6 < HYBRID_3_META3_MID) ? 0 : 1; // 0 = SAg, 1 = gshare
+
+	BOOL prediction = (choice4) ? ((choice5) ? (prediction3) : (prediction2)) : ((choice6) ? (prediction3) : (prediction1)); 
+	Mispred[HYBRID_3].back += taken^prediction;
+	
+	hybrid_3_SAg_pht[hist1] =  (taken) ? ((counter1 == HYBRID_3_SAg_MAX) ? counter1 : counter1+1) : ((counter1 == 0) ? 0 : counter1-1);
+	hybrid_3_SAg_bht[hpc1] = ((hist1 << 1 | (taken)) & HYBRID_3_SAg_BHT_MASK);
+	hybrid_3_GAg_pht[hist2] =  (taken) ? ((counter2 == HYBRID_3_GAg_MAX) ? counter2 : counter2+1) : ((counter2 == 0) ? 0 : counter2-1);
+	hybrid_3_GAg_ghr = ((hist2 << 1 | (taken)) & HYBRID_3_GAg_GHR_MASK);
+	hybrid_3_gshare_pht[hash3] =  (taken) ? ((counter3 == HYBRID_3_GSHARE_MAX) ? counter3 : counter3+1) : ((counter3 == 0) ? 0 : counter3-1);
+	hybrid_3_gshare_ghr = ((hist3 << 1 | (taken)) & HYBRID_3_GSHARE_GHR_MASK);
+	BOOL s = (taken == prediction1);
+	BOOL g = (taken == prediction2);
+	BOOL r = (taken == prediction3); 
+	hybrid_3_meta1_pred[hist4] = (g & !s) ? ((counter4 == HYBRID_3_META1_MAX) ? counter4 : counter4+1) : ((s & !g) ? ((counter4 == 0) ? 0 : counter4-1) : counter4);
+	hybrid_3_meta1_ghr = ((hist4 << 1 | (taken)) & HYBRID_3_GHR1_MASK);
+	hybrid_3_meta2_pred[hist5] = (r & !g) ? ((counter5 == HYBRID_3_META2_MAX) ? counter5 : counter5+1) : ((g & !r) ? ((counter5 == 0) ? 0 : counter5-1) : counter5);
+	hybrid_3_meta2_ghr = ((hist5 << 1 | (taken)) & HYBRID_3_GHR2_MASK);
+	hybrid_3_meta3_pred[hist6] = (r & !s) ? ((counter6 == HYBRID_3_META3_MAX) ? counter6 : counter6+1) : ((s & !r) ? ((counter6 == 0) ? 0 : counter6-1) : counter6);
+	hybrid_3_meta3_ghr = ((hist6 << 1 | (taken)) & HYBRID_3_GHR3_MASK);
+}
+
 /* Instruction instrumentation routine */
 VOID Trace(TRACE trace, VOID *v)
 {
@@ -482,6 +632,9 @@ VOID Trace(TRACE trace, VOID *v)
 					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
 					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_hybrid_3_maj, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
 				
+					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
+					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) FwdMispred_hybrid_3, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
+				
 				}
                 else{
                     INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
@@ -507,6 +660,10 @@ VOID Trace(TRACE trace, VOID *v)
 				
 					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
 					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_hybrid_3_maj, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
+					
+					INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
+					INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BkdMispred_hybrid_3, IARG_BRANCH_TAKEN, IARG_UINT64, pc, IARG_END);
+				
 				}
             }
 			// INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
@@ -533,6 +690,9 @@ int main(int argc, char *argv[])
 {
 	// Initialize PIN library. Print help message if -h(elp) is specified
 	// in the command line or the command line is invalid 
+
+	startTime = chrono::high_resolution_clock::now();
+
 	if (PIN_Init(argc, argv))
 		return Usage();
 
@@ -545,15 +705,38 @@ int main(int argc, char *argv[])
 	if (!fileName.empty())
 		out = new std::ofstream(fileName.c_str());
 
-	for(int i=0; i<BIMODAL_ROW; i++) bimodal_pht[i] = 0;
-	for(int i=0; i<SAg_BHT_ROW; i++) {SAg_bht[i] = 0; hybrid_2_SAg_bht[i] = 0;}
-	for(int i=0; i<SAg_PHT_ROW; i++) {SAg_pht[i] = 0; hybrid_2_SAg_pht[i] = 0;} 
-	GAg_ghr = 0; hybrid_2_GAg_ghr = 0; gshare_ghr = 0; hybrid_2_meta_ghr = 0;
-	for(int i=0; i<GAg_PHT_ROW; i++) {GAg_pht[i] = 0; hybrid_2_GAg_pht[i] = 0;}
-	for(int i=0; i<GSHARE_PHT_ROW; i++) gshare_pht[i] = 0;
-	for(int i=0; i<HYBRID_2_META_ROW; i++) hybrid_2_meta_pred[i] = 0;
+	MEMSET0(bimodal_pht);
+	MEMSET0(SAg_bht);
+	MEMSET0(SAg_pht);
+	GAg_ghr = 0;
+	MEMSET0(GAg_pht);
+	gshare_ghr = 0;
+	MEMSET0(gshare_pht);
+	MEMSET0(hybrid_2_SAg_bht);
+	MEMSET0(hybrid_2_SAg_pht);
+	hybrid_2_GAg_ghr = 0;
+	MEMSET0(hybrid_2_GAg_pht);
+	hybrid_2_meta_ghr = 0;
+	MEMSET0(hybrid_2_meta_pred);
+	MEMSET0(hybrid_3_maj_SAg_bht);
+	MEMSET0(hybrid_3_maj_SAg_pht);
+	hybrid_3_maj_GAg_ghr = 0;
+	MEMSET0(hybrid_3_maj_GAg_pht);
+	hybrid_3_maj_gshare_ghr = 0;
+	MEMSET0(hybrid_3_maj_gshare_pht);
+	MEMSET0(hybrid_3_SAg_bht);
+	MEMSET0(hybrid_3_SAg_pht);
+	hybrid_3_GAg_ghr = 0;
+	MEMSET0(hybrid_3_GAg_pht);
+	hybrid_3_gshare_ghr = 0;
+	MEMSET0(hybrid_3_gshare_pht);
+	hybrid_3_meta1_ghr = 0;
+	MEMSET0(hybrid_3_meta1_pred);
+	hybrid_3_meta2_ghr = 0;
+	MEMSET0(hybrid_3_meta2_pred);
+	hybrid_3_meta3_ghr = 0;
+	MEMSET0(hybrid_3_meta3_pred);
 
-    
 	// Register function to be called to instrument instructions
 	TRACE_AddInstrumentFunction(Trace, 0);
 
