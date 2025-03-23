@@ -38,12 +38,12 @@ using namespace std;
 #define GSHARE_MID (1 << (GSHARE_PHT_COL-1))
 #define GSHARE_MAX ((1 << (GSHARE_PHT_COL))-1)
 
-#define HYBRID2_GHR_SIZE 9
-#define HYBRID2_GHR_MASK ((1 << HYBRID2_GHR_SIZE)-1)
+#define HYBRID_2_GHR_SIZE 9
+#define HYBRID_2_GHR_MASK ((1 << HYBRID_2_GHR_SIZE)-1)
 #define HYBRID_2_META_ROW 512
 #define HYBRID_2_META_COL 2
-#define HYBRID2_GHR_MID (1 << (HYBRID_2_META_COL-1))
-#define HYBRID2_GHR_MAX ((1 << (HYBRID_2_META_COL))-1)
+#define HYBRID_2_GHR_MID (1 << (HYBRID_2_META_COL-1))
+#define HYBRID_2_GHR_MAX ((1 << (HYBRID_2_META_COL))-1)
 
 typedef enum{
     INS_DIRECT_CALL=0,
@@ -144,7 +144,7 @@ VOID StatDump(void){
 	*out << "===============================================" << endl;
 	*out << "Direction Predictors" << endl;
 	for(int i=0; i<DP_COUNT; i++){
-		*out << pred_names[i] << ": Accesses " << (dp_forwbr + dp_backbr);
+		*out << pred_names[i] << " : Accesses " << (dp_forwbr + dp_backbr);
 		*out << " Mispredictions " << (Mispred[i].forw + Mispred[i].back) ;
 		*out << " (" << (1.0*Mispred[i].forw + Mispred[i].back)/(1.0*dp_forwbr + dp_backbr) << ")";
 		*out << " Forward Branches " << dp_forwbr;
@@ -255,9 +255,9 @@ VOID BkdMispred_gshare(BOOL taken, UINT64 pc){
 }
 
 VOID FwdMispred_hybrid_2(BOOL taken, UINT64 pc){
-	UINT64 hist = hybrid_2_meta_ghr & HYBRID2_GHR_MASK;
+	UINT64 hist = hybrid_2_meta_ghr & HYBRID_2_GHR_MASK;
 	UINT64 counter = hybrid_2_meta_pred[hist];
-	BOOL choice = (counter < HYBRID2_GHR_MID) ? 0 : 1;
+	BOOL choice = (counter < HYBRID_2_GHR_MID) ? 0 : 1;
 
 	UINT64 hpc1 = pc%SAg_BHT_ROW;
 	UINT64 hist1 = hybrid_2_SAg_bht[hpc1];
@@ -275,14 +275,17 @@ VOID FwdMispred_hybrid_2(BOOL taken, UINT64 pc){
 	hybrid_2_SAg_bht[hpc1] = ((hist1 << 1 | (taken)) & SAg_BHT_MASK);
 	hybrid_2_GAg_pht[hist2] =  (taken) ? ((counter2 == GAg_MAX) ? counter2 : counter2+1) : ((counter2 == 0) ? 0 : counter2-1);
 	hybrid_2_GAg_ghr = ((hist2 << 1 | (taken)) & GAg_GHR_MASK);
-	hybrid_2_meta_pred[hist] = (taken) ? ((counter == HYBRID2_GHR_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
-	hybrid_2_meta_ghr = ((hist << 1 | (taken)) & HYBRID2_GHR_MASK);
+	BOOL s = (taken == prediction1);
+	BOOL g = (taken == prediction2);
+	hybrid_2_meta_pred[hist] = (g & !s) ? ((counter == HYBRID_2_GHR_MAX) ? counter : counter+1) : ((s & !g) ? ((counter == 0) ? 0 : counter-1) : counter);
+	// hybrid_2_meta_pred[hist] = (choice) ? ((counter == HYBRID_2_GHR_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
+	hybrid_2_meta_ghr = ((hist << 1 | (taken)) & HYBRID_2_GHR_MASK);
 }
 
 VOID BkdMispred_hybrid_2(BOOL taken, UINT64 pc){
-	UINT64 hist = hybrid_2_meta_ghr & HYBRID2_GHR_MASK;
+	UINT64 hist = hybrid_2_meta_ghr & HYBRID_2_GHR_MASK;
 	UINT64 counter = hybrid_2_meta_pred[hist];
-	BOOL choice = (counter < HYBRID2_GHR_MID) ? 0 : 1;
+	BOOL choice = (counter < HYBRID_2_GHR_MID) ? 0 : 1;
 
 	UINT64 hpc1 = pc%SAg_BHT_ROW;
 	UINT64 hist1 = hybrid_2_SAg_bht[hpc1];
@@ -300,8 +303,11 @@ VOID BkdMispred_hybrid_2(BOOL taken, UINT64 pc){
 	hybrid_2_SAg_bht[hpc1] = ((hist1 << 1 | (taken)) & SAg_BHT_MASK);
 	hybrid_2_GAg_pht[hist2] =  (taken) ? ((counter2 == GAg_MAX) ? counter2 : counter2+1) : ((counter2 == 0) ? 0 : counter2-1);
 	hybrid_2_GAg_ghr = ((hist2 << 1 | (taken)) & GAg_GHR_MASK);
-	hybrid_2_meta_pred[hist] = (taken) ? ((counter == HYBRID2_GHR_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
-	hybrid_2_meta_ghr = ((hist << 1 | (taken)) & HYBRID2_GHR_MASK);
+	BOOL s = (taken == prediction1);
+	BOOL g = (taken == prediction2);
+	hybrid_2_meta_pred[hist] = (g & !s) ? ((counter == HYBRID_2_GHR_MAX) ? counter : counter+1) : ((s & !g) ? ((counter == 0) ? 0 : counter-1) : counter);
+	// hybrid_2_meta_pred[hist] = (choice) ? ((counter == HYBRID_2_GHR_MAX) ? counter : counter+1) : ((counter == 0) ? 0 : counter-1);
+	hybrid_2_meta_ghr = ((hist << 1 | (taken)) & HYBRID_2_GHR_MASK);
 }
 
 /* Instruction instrumentation routine */
