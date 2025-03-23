@@ -268,17 +268,17 @@ VOID StatDump(void){
 }
 
 VOID DPAccess(ADDRINT ins_addr, ADDRINT taken_addr){
-	BOOL dir = ((UINT64)taken_addr > (UINT64)ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
+	UINT64 dir = (taken_addr > ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
 	dp_access[dir]++;
 }
 
 VOID fnbt(BOOL taken, ADDRINT ins_addr, ADDRINT taken_addr){
-	BOOL dir = ((UINT64)taken_addr > (UINT64)ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
+	UINT64 dir = (taken_addr > ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
     Mispred[FNBT][dir] += taken^dir;
 }
 
 VOID bimodal(BOOL taken, ADDRINT ins_addr, ADDRINT taken_addr){
-	BOOL dir = ((UINT64)taken_addr > (UINT64)ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
+	UINT64 dir = (taken_addr > ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
 	UINT64 pc = (UINT64)ins_addr;
 	UINT64 hpc = pc%BIMODAL_ROW;
 	UINT64 counter = bimodal_pht[hpc];
@@ -288,7 +288,7 @@ VOID bimodal(BOOL taken, ADDRINT ins_addr, ADDRINT taken_addr){
 }
 
 VOID sag(BOOL taken, ADDRINT ins_addr, ADDRINT taken_addr){
-	BOOL dir = ((UINT64)taken_addr > (UINT64)ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
+	UINT64 dir = (taken_addr > ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
 	UINT64 pc = (UINT64)ins_addr;
 	UINT64 hpc = pc%SAg_BHT_ROW;
 	UINT64 hist = SAg_bht[hpc];
@@ -300,7 +300,7 @@ VOID sag(BOOL taken, ADDRINT ins_addr, ADDRINT taken_addr){
 }
 
 VOID gag(BOOL taken, ADDRINT ins_addr, ADDRINT taken_addr){
-	BOOL dir = ((UINT64)taken_addr > (UINT64)ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
+	UINT64 dir = (taken_addr > ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
 	UINT64 hist = GAg_ghr & GAg_GHR_MASK;
 	UINT64 counter = GAg_pht[hist];
 	BOOL prediction = (counter < GAg_MID) ? 0 : 1;
@@ -310,7 +310,7 @@ VOID gag(BOOL taken, ADDRINT ins_addr, ADDRINT taken_addr){
 }
 
 VOID gshare(BOOL taken, ADDRINT ins_addr, ADDRINT taken_addr){
-	BOOL dir = ((UINT64)taken_addr > (UINT64)ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
+	UINT64 dir = (taken_addr > ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
 	UINT64 pc = (UINT64)ins_addr;
 	UINT64 hist = gshare_ghr & GSHARE_GHR_MASK;
 	UINT64 hash = (hist ^ pc) & GSHARE_GHR_MASK;
@@ -322,7 +322,7 @@ VOID gshare(BOOL taken, ADDRINT ins_addr, ADDRINT taken_addr){
 }
 
 VOID hybrid_2(BOOL taken, ADDRINT ins_addr, ADDRINT taken_addr){
-	BOOL dir = ((UINT64)taken_addr > (UINT64)ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
+	UINT64 dir = (taken_addr > ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
 	UINT64 pc = (UINT64)ins_addr;
 	UINT64 hist = hybrid_2_meta_ghr & HYBRID_2_GHR_MASK;
 	UINT64 counter = hybrid_2_meta_pred[hist];
@@ -351,7 +351,7 @@ VOID hybrid_2(BOOL taken, ADDRINT ins_addr, ADDRINT taken_addr){
 }
 
 VOID hybrid_3_maj(BOOL taken, ADDRINT ins_addr, ADDRINT taken_addr){
-	BOOL dir = ((UINT64)taken_addr > (UINT64)ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
+	UINT64 dir = (taken_addr > ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
 	UINT64 pc = (UINT64)ins_addr;
 	UINT64 hpc1 = pc%HYBRID_3_MAJ_SAg_BHT_ROW;
 	UINT64 hist1 = hybrid_3_maj_SAg_bht[hpc1];
@@ -381,7 +381,7 @@ VOID hybrid_3_maj(BOOL taken, ADDRINT ins_addr, ADDRINT taken_addr){
 }
 
 VOID hybrid_3(BOOL taken, ADDRINT ins_addr, ADDRINT taken_addr){
-	BOOL dir = ((UINT64)taken_addr > (UINT64)ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
+	UINT64 dir = (taken_addr > ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
 	UINT64 pc = (UINT64)ins_addr;
 	UINT64 hpc1 = pc%HYBRID_3_SAg_BHT_ROW;
 	UINT64 hist1 = hybrid_3_SAg_bht[hpc1];
@@ -501,7 +501,7 @@ VOID BTB1(ADDRINT taken_addr, UINT64 pc, UINT64 next_pc){
 }
 
 VOID BTB2(ADDRINT taken_addr, UINT64 pc, UINT64 next_pc){
-	
+
 }
 
 /* Instruction instrumentation routine */
