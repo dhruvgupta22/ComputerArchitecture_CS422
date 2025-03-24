@@ -519,7 +519,7 @@ VOID BTB1(ADDRINT taken_addr, UINT64 pc, UINT64 next_pc){
 VOID BTB2(ADDRINT taken_addr, UINT64 pc, UINT64 next_pc){
 	UINT64 hist = btb2_ghr & BTB2_GHR_MASK;
 	UINT64 hpc = pc & BTB2_GHR_MASK;
-	UINT64 set = (hist ^ hpc) & GSHARE_GHR_MASK;
+	UINT64 set = (hist ^ hpc) & BTB2_GHR_MASK;
 	UINT64 tag = pc;
 	
 	int hit = -1;
