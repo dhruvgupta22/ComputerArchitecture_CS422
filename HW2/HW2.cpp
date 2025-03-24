@@ -122,6 +122,12 @@ chrono::time_point<chrono::high_resolution_clock> startTime, endTime;
 #define BTB1_NUM_SETS (1 << (BTB1_INDEX_BITS))
 #define BTB1_NUM_WAYS 4
 
+#define BTB2_INDEX_BITS 7
+#define BTB2_NUM_SETS (1 << (BTB2_INDEX_BITS))
+#define BTB2_NUM_WAYS 4
+#define BTB2_GHR_SIZE BTB2_INDEX_BITS
+#define BTB2_GHR_MASK ((1 << BTB2_GHR_SIZE)-1)
+
 #define MEMSET0(arr) do { \
 	memset(arr, 0, sizeof(arr)); \
 } while (0)
@@ -188,6 +194,9 @@ UINT64 hybrid_3_meta3_pred[HYBRID_3_META3_ROW];
 
 BTB_Entry btb1[BTB1_NUM_SETS][BTB1_NUM_WAYS];
 
+BTB_Entry btb2[BTB2_NUM_SETS][BTB2_NUM_WAYS];
+UINT64 btb2_ghr;
+
 
 ADDRINT fastForwardDone = 0;
 UINT64 icount = 0; //number of dynamically executed instructions
@@ -197,9 +206,11 @@ UINT64 maxIns; // maximum number of instructions to simulate
 
 UINT64 dp_access[2];
 UINT64 Mispred[DP_COUNT][2];
-UINT64 btb1_access = 0;
+UINT64 btb_access = 0;
 UINT64 btb1_miss = 0;
 UINT64 btb1_mispred = 0;
+UINT64 btb2_miss = 0;
+UINT64 btb2_mispred = 0;
 
 /* Command line switches */
 KNOB<string> KnobOutputFile(KNOB_MODE_WRITEONCE, "pintool", "o", "HW2.out", "specify file name for HW2 output");
@@ -257,8 +268,8 @@ VOID StatDump(void){
 	*out << endl;
 	*out << "===============================================" << endl;
 	*out << "Branch Target Predictors" << endl;
-	*out << "BTB1 : Accesses "<< btb1_access << ", Misses "<< btb1_miss<< " (" << (double)(btb1_miss)/(btb1_access)<< "), Mispredictions "<< btb1_mispred <<" (" << (double)(btb1_mispred)/(btb1_access)<<")"<<endl;
-	// *out << "BTB2 : Accesses "<< btb2_access << ", Misses "<< btb2_miss<< " (" << (double)(btb2_miss)/(btb2_access)<< "), Mispredictions "<< btb2_mispred <<" (" << (double)(btb2_mispred)/(btb2_access)<<")"<<endl;
+	*out << "BTB1 : Accesses "<< btb_access << ", Misses "<< btb1_miss<< " (" << (double)(btb1_miss)/(btb_access)<< "), Mispredictions "<< btb1_mispred <<" (" << (double)(btb1_mispred)/(btb_access)<<")"<<endl;
+	*out << "BTB2 : Accesses "<< btb_access << ", Misses "<< btb2_miss<< " (" << (double)(btb2_miss)/(btb_access)<< "), Mispredictions "<< btb2_mispred <<" (" << (double)(btb2_mispred)/(btb_access)<<")"<<endl;
 	*out << endl;
 	*out << "===============================================" << endl;
 	endTime = chrono::high_resolution_clock::now();
@@ -267,9 +278,11 @@ VOID StatDump(void){
 	exit(0);
 }
 
-VOID DPAccess(ADDRINT ins_addr, ADDRINT taken_addr){
+VOID DPAccess(BOOL taken, ADDRINT ins_addr, ADDRINT taken_addr){
 	UINT64 dir = (taken_addr > ins_addr) ? 0 : 1; // 0 -> forward, 1 -> backward
 	dp_access[dir]++;
+	UINT64 hist = btb2_ghr & BTB2_GHR_MASK;
+	btb2_ghr = ((hist << 1 | (taken)) & BTB2_GHR_MASK);
 }
 
 VOID fnbt(BOOL taken, ADDRINT ins_addr, ADDRINT taken_addr){
@@ -429,8 +442,11 @@ VOID hybrid_3(BOOL taken, ADDRINT ins_addr, ADDRINT taken_addr){
 	hybrid_3_meta3_ghr = ((hist6 << 1 | (taken)) & HYBRID_3_GHR3_MASK);
 }
 
+VOID BTBAccess(){
+	btb_access++;
+}
+
 VOID BTB1(ADDRINT taken_addr, UINT64 pc, UINT64 next_pc){
-	btb1_access++;
 	UINT64 set = pc&(BTB1_NUM_SETS-1);
 	UINT64 tag = pc >> BTB1_INDEX_BITS;
 	int hit = -1;
@@ -501,7 +517,76 @@ VOID BTB1(ADDRINT taken_addr, UINT64 pc, UINT64 next_pc){
 }
 
 VOID BTB2(ADDRINT taken_addr, UINT64 pc, UINT64 next_pc){
+	UINT64 hist = btb2_ghr & BTB2_GHR_MASK;
+	UINT64 hpc = pc & BTB2_GHR_MASK;
+	UINT64 set = (hist ^ hpc) & GSHARE_GHR_MASK;
+	UINT64 tag = pc;
+	
+	int hit = -1;
+	for(int i = 0; i < BTB2_NUM_WAYS; i++){
+		if(btb2[set][i].valid == 1 && btb2[set][i].tag == tag){ 
+			hit = i; 
+			break;
+		}
+	}
+	UINT64 prediction = (hit != -1) ? btb2[set][hit].target : next_pc;
 
+	if(hit == -1) btb2_miss++;
+
+	if(prediction != (UINT64)taken_addr){
+		btb2_mispred++;
+
+		if(hit == -1){
+			int idx = -1;
+			for(int i = 0; i < BTB2_NUM_WAYS; i++){
+				if(btb2[set][i].valid == 0){
+					idx = i;
+					break;
+				}
+				else if(btb2[set][i].lru_state == 1){
+					idx = i;
+				}
+			}
+			assert(idx != -1);
+			btb2[set][idx].valid = 1;
+			btb2[set][idx].tag = tag;
+			btb2[set][idx].lru_state = BTB2_NUM_WAYS;
+			btb2[set][idx].target = taken_addr;
+	
+			for(int j = 0; j < BTB2_NUM_WAYS; j++){
+				if(j != idx && btb2[set][j].valid != 0){
+					btb2[set][j].lru_state--;
+				}
+			}
+		}
+		else{
+			if((UINT64)taken_addr == next_pc){
+				UINT64 lru = btb2[set][hit].lru_state;
+				for(int i=0; i<BTB2_NUM_WAYS; i++){
+					if(btb2[set][i].lru_state < lru) btb2[set][i].lru_state++;
+				}
+				btb2[set][hit].valid = 0;
+			}
+			else{
+				btb2[set][hit].target = taken_addr;
+				UINT64 lru = btb2[set][hit].lru_state;
+				for(int i=0; i<BTB2_NUM_WAYS; i++){
+					if(btb2[set][i].lru_state > lru) btb2[set][i].lru_state--;
+				}
+				btb2[set][hit].lru_state = BTB2_NUM_WAYS;
+			}
+		}
+
+	}
+	else{
+		if(hit != -1){
+			UINT64 lru = btb2[set][hit].lru_state;
+			for(int i=0; i<BTB2_NUM_WAYS; i++){
+				if(btb2[set][i].lru_state > lru) btb2[set][i].lru_state--;
+			}
+			btb2[set][hit].lru_state = BTB2_NUM_WAYS;
+		}
+	}
 }
 
 /* Instruction instrumentation routine */
@@ -548,12 +633,14 @@ VOID Trace(TRACE trace, VOID *v)
 				INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) hybrid_3, IARG_BRANCH_TAKEN, IARG_INST_PTR, IARG_BRANCH_TARGET_ADDR, IARG_END);
             }
 			else if(INS_IsIndirectControlFlow(ins)){
+				INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
+				INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BTBAccess, IARG_END); 
 				UINT64 next_pc = (UINT64) INS_Address(INS_Next(ins));
 				INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
 				INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BTB1, IARG_BRANCH_TARGET_ADDR, IARG_UINT64, pc, IARG_UINT64, next_pc, IARG_END); 
 
-				// INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-				// INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BTB2, IARG_END); 
+				INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
+				INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BTB2, IARG_BRANCH_TARGET_ADDR, IARG_UINT64, pc, IARG_UINT64, next_pc, IARG_END); 
 			}
 			// INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
 			// INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) <FuncName>, IARG_IARGLIST, args, IARG_END);
