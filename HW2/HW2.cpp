@@ -446,147 +446,130 @@ VOID BTBAccess(){
 	btb_access++;
 }
 
-VOID BTB1(ADDRINT taken_addr, UINT64 pc, UINT64 next_pc){
+// if branch not taken & btb miss - nothing   
+// if branch taken & btb miss     - make entry, lru order (misp)
+// if branch taken & btb hit (c)  - lru order
+// if branch taken & btb hit (i)  - modify branch target, correct lru order (misp)
+// if branch not taken & btb hit (i) - invalidate + lru order (misp)
+VOID BTB1(BOOL taken, ADDRINT taken_addr, UINT64 pc, UINT64 next_pc){
 	UINT64 set = pc&(BTB1_NUM_SETS-1);
 	UINT64 tag = pc >> BTB1_INDEX_BITS;
-	int hit = -1;
+	int hit = -1; // miss
 	for(int i = 0; i < BTB1_NUM_WAYS; i++){
 		if(btb1[set][i].valid == 1 && btb1[set][i].tag == tag){ 
 			hit = i; 
 			break;
 		}
 	}
-	UINT64 prediction = (hit != -1) ? btb1[set][hit].target : next_pc;
 
-	if(hit == -1) btb1_miss++;
+	if(hit==-1) btb1_miss++;
 
-	if(prediction != (UINT64)taken_addr){
+	if(taken && hit==-1){ // branch taken & btb miss
 		btb1_mispred++;
-
-		if(hit == -1){
-			int idx = -1;
-			for(int i = 0; i < BTB1_NUM_WAYS; i++){
-				if(btb1[set][i].valid == 0){
-					idx = i;
-					break;
-				}
-				else if(btb1[set][i].lru_state == 1){
-					idx = i;
-				}
+		int idx = -1;
+		for(int i = 0; i < BTB1_NUM_WAYS; i++){
+			if(btb1[set][i].valid == 0){
+				idx = i;
+				break;
 			}
-			assert(idx != -1);
-			btb1[set][idx].valid = 1;
-			btb1[set][idx].tag = tag;
-			btb1[set][idx].lru_state = BTB1_NUM_WAYS;
-			btb1[set][idx].target = taken_addr;
+			else if(btb1[set][i].lru_state == 1){
+				idx = i;
+			}
+		}
+		assert(idx != -1);
+		btb1[set][idx].valid = 1;
+		btb1[set][idx].tag = tag;
+		btb1[set][idx].lru_state = BTB1_NUM_WAYS;
+		btb1[set][idx].target = taken_addr;
+
+		for(int j = 0; j < BTB1_NUM_WAYS; j++){
+			if(j != idx && btb1[set][j].valid != 0){
+				btb1[set][j].lru_state--;
+			}
+		}
+	}
 	
-			for(int j = 0; j < BTB1_NUM_WAYS; j++){
-				if(j != idx && btb1[set][j].valid != 0){
-					btb1[set][j].lru_state--;
-				}
-			}
+	else if(taken && hit!=-1) { //branch taken & btb hit
+		if(taken_addr != btb1[set][hit].target){ // incorrect
+			btb1_mispred++;
+			btb1[set][hit].target = taken_addr;
 		}
-		else{
-			if((UINT64)taken_addr == next_pc){
-				UINT64 lru = btb1[set][hit].lru_state;
-				for(int i=0; i<BTB1_NUM_WAYS; i++){
-					if(btb1[set][i].lru_state < lru) btb1[set][i].lru_state++;
-				}
-				btb1[set][hit].valid = 0;
-			}
-			else{
-				btb1[set][hit].target = taken_addr;
-				UINT64 lru = btb1[set][hit].lru_state;
-				for(int i=0; i<BTB1_NUM_WAYS; i++){
-					if(btb1[set][i].lru_state > lru) btb1[set][i].lru_state--;
-				}
-				btb1[set][hit].lru_state = BTB1_NUM_WAYS;
-			}
+		UINT64 lru = btb1[set][hit].lru_state;
+		for(int i=0; i<BTB1_NUM_WAYS; i++){
+			if(btb1[set][i].lru_state > lru) btb1[set][i].lru_state--;
 		}
-
+		btb1[set][hit].lru_state = BTB1_NUM_WAYS;
 	}
-	else{
-		if(hit != -1){
-			UINT64 lru = btb1[set][hit].lru_state;
-			for(int i=0; i<BTB1_NUM_WAYS; i++){
-				if(btb1[set][i].lru_state > lru) btb1[set][i].lru_state--;
-			}
-			btb1[set][hit].lru_state = BTB1_NUM_WAYS;
+	else if(!taken && hit!=-1){ //branch not taken & btb hit
+		btb1_mispred++;
+		UINT64 lru = btb1[set][hit].lru_state;
+		for(int i=0; i<BTB1_NUM_WAYS; i++){
+			if(btb1[set][i].lru_state < lru) btb1[set][i].lru_state++;
 		}
-	}
+		btb1[set][hit].valid = 0;
+	} 
 }
 
-VOID BTB2(ADDRINT taken_addr, UINT64 pc, UINT64 next_pc){
+VOID BTB2(BOOL taken, ADDRINT taken_addr, UINT64 pc, UINT64 next_pc){
 	UINT64 hist = btb2_ghr & BTB2_GHR_MASK;
 	UINT64 hpc = pc & BTB2_GHR_MASK;
 	UINT64 set = (hist ^ hpc) & BTB2_GHR_MASK;
 	UINT64 tag = pc;
 	
-	int hit = -1;
+	int hit = -1; // miss
 	for(int i = 0; i < BTB2_NUM_WAYS; i++){
 		if(btb2[set][i].valid == 1 && btb2[set][i].tag == tag){ 
 			hit = i; 
 			break;
 		}
 	}
-	UINT64 prediction = (hit != -1) ? btb2[set][hit].target : next_pc;
 
-	if(hit == -1) btb2_miss++;
+	if(hit==-1) btb2_miss++;
 
-	if(prediction != (UINT64)taken_addr){
+	if(taken && hit==-1){ // branch taken & btb miss
 		btb2_mispred++;
-
-		if(hit == -1){
-			int idx = -1;
-			for(int i = 0; i < BTB2_NUM_WAYS; i++){
-				if(btb2[set][i].valid == 0){
-					idx = i;
-					break;
-				}
-				else if(btb2[set][i].lru_state == 1){
-					idx = i;
-				}
+		int idx = -1;
+		for(int i = 0; i < BTB2_NUM_WAYS; i++){
+			if(btb2[set][i].valid == 0){
+				idx = i;
+				break;
 			}
-			assert(idx != -1);
-			btb2[set][idx].valid = 1;
-			btb2[set][idx].tag = tag;
-			btb2[set][idx].lru_state = BTB2_NUM_WAYS;
-			btb2[set][idx].target = taken_addr;
+			else if(btb2[set][i].lru_state == 1){
+				idx = i;
+			}
+		}
+		assert(idx != -1);
+		btb2[set][idx].valid = 1;
+		btb2[set][idx].tag = tag;
+		btb2[set][idx].lru_state = BTB2_NUM_WAYS;
+		btb2[set][idx].target = taken_addr;
+
+		for(int j = 0; j < BTB2_NUM_WAYS; j++){
+			if(j != idx && btb2[set][j].valid != 0){
+				btb2[set][j].lru_state--;
+			}
+		}
+	}
 	
-			for(int j = 0; j < BTB2_NUM_WAYS; j++){
-				if(j != idx && btb2[set][j].valid != 0){
-					btb2[set][j].lru_state--;
-				}
-			}
+	else if(taken && hit!=-1) { //branch taken & btb hit
+		if(taken_addr != btb2[set][hit].target){ // incorrect
+			btb2_mispred++;
+			btb2[set][hit].target = taken_addr;
 		}
-		else{
-			if((UINT64)taken_addr == next_pc){
-				UINT64 lru = btb2[set][hit].lru_state;
-				for(int i=0; i<BTB2_NUM_WAYS; i++){
-					if(btb2[set][i].lru_state < lru) btb2[set][i].lru_state++;
-				}
-				btb2[set][hit].valid = 0;
-			}
-			else{
-				btb2[set][hit].target = taken_addr;
-				UINT64 lru = btb2[set][hit].lru_state;
-				for(int i=0; i<BTB2_NUM_WAYS; i++){
-					if(btb2[set][i].lru_state > lru) btb2[set][i].lru_state--;
-				}
-				btb2[set][hit].lru_state = BTB2_NUM_WAYS;
-			}
+		UINT64 lru = btb2[set][hit].lru_state;
+		for(int i=0; i<BTB2_NUM_WAYS; i++){
+			if(btb2[set][i].lru_state > lru) btb2[set][i].lru_state--;
 		}
-
+		btb2[set][hit].lru_state = BTB2_NUM_WAYS;
 	}
-	else{
-		if(hit != -1){
-			UINT64 lru = btb2[set][hit].lru_state;
-			for(int i=0; i<BTB2_NUM_WAYS; i++){
-				if(btb2[set][i].lru_state > lru) btb2[set][i].lru_state--;
-			}
-			btb2[set][hit].lru_state = BTB2_NUM_WAYS;
+	else if(!taken && hit!=-1){ //branch not taken & btb hit
+		btb2_mispred++;
+		UINT64 lru = btb2[set][hit].lru_state;
+		for(int i=0; i<BTB2_NUM_WAYS; i++){
+			if(btb2[set][i].lru_state < lru) btb2[set][i].lru_state++;
 		}
-	}
+		btb2[set][hit].valid = 0;
+	} 
 }
 
 /* Instruction instrumentation routine */
@@ -635,19 +618,14 @@ VOID Trace(TRACE trace, VOID *v)
 			else if(INS_IsIndirectControlFlow(ins)){
 				INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
 				INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BTBAccess, IARG_END); 
+				
 				UINT64 next_pc = (UINT64) INS_Address(INS_Next(ins));
 				INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-				INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BTB1, IARG_BRANCH_TARGET_ADDR, IARG_UINT64, pc, IARG_UINT64, next_pc, IARG_END); 
+				INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BTB1, IARG_BRANCH_TAKEN, IARG_BRANCH_TARGET_ADDR, IARG_UINT64, pc, IARG_UINT64, next_pc, IARG_END); 
 
 				INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-				INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BTB2, IARG_BRANCH_TARGET_ADDR, IARG_UINT64, pc, IARG_UINT64, next_pc, IARG_END); 
+				INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) BTB2, IARG_BRANCH_TAKEN, IARG_BRANCH_TARGET_ADDR, IARG_UINT64, pc, IARG_UINT64, next_pc, IARG_END); 
 			}
-			// INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) IsFastForwardDone, IARG_END);
-			// INS_InsertThenCall(ins, IPOINT_BEFORE, (AFUNPTR) <FuncName>, IARG_IARGLIST, args, IARG_END);
-
-			// /* Free analysis argument list */
-			// IARGLIST_Free(args);
-
 			if (ins == BBL_InsTail(bbl)) break;
 		}
 
@@ -681,8 +659,6 @@ int main(int argc, char *argv[])
 	if (!fileName.empty())
 		out = new std::ofstream(fileName.c_str());
 
-
-	
 	MEMSET0(dp_access);
 	MEMSET0(Mispred);
 	MEMSET0(bimodal_pht);
