@@ -681,6 +681,8 @@ int main(int argc, char *argv[])
 	if (!fileName.empty())
 		out = new std::ofstream(fileName.c_str());
 
+
+	
 	MEMSET0(dp_access);
 	MEMSET0(Mispred);
 	MEMSET0(bimodal_pht);
@@ -716,7 +718,8 @@ int main(int argc, char *argv[])
 	MEMSET0(hybrid_3_meta3_pred);
 
 	MEMSET0(btb1);
-	// MEMSET0(btb2);
+	MEMSET0(btb2);
+	btb2_ghr = 0;
 
 	// Register function to be called to instrument instructions
 	TRACE_AddInstrumentFunction(Trace, 0);
