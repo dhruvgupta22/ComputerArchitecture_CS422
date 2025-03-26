@@ -1,18 +1,18 @@
 ===============================================
 Direction Predictors
-FNBT : Accesses 129955660, Mispredictions 53670760 (0.412993), Forward Branches 103895972, Forward Mispredictions 39012999 (0.375501), Backward Branches 26059688, Backward Mispredictions 14657761 (0.562469)
-Bimodal : Accesses 129955660, Mispredictions 12417861 (0.0955546), Forward Branches 103895972, Forward Mispredictions 10367855 (0.0997907), Backward Branches 26059688, Backward Mispredictions 2050006 (0.0786658)
-SAg : Accesses 129955660, Mispredictions 4741568 (0.036486), Forward Branches 103895972, Forward Mispredictions 3881127 (0.0373559), Backward Branches 26059688, Backward Mispredictions 860441 (0.0330181)
-GAg : Accesses 129955660, Mispredictions 15304596 (0.117768), Forward Branches 103895972, Forward Mispredictions 12949281 (0.124637), Backward Branches 26059688, Backward Mispredictions 2355315 (0.0903816)
-gshare : Accesses 129955660, Mispredictions 13227327 (0.101783), Forward Branches 103895972, Forward Mispredictions 10717342 (0.103155), Backward Branches 26059688, Backward Mispredictions 2509985 (0.0963168)
-Combined2 : Accesses 129955660, Mispredictions 3995213 (0.0307429), Forward Branches 103895972, Forward Mispredictions 3287505 (0.0316423), Backward Branches 26059688, Backward Mispredictions 707708 (0.0271572)
-Combined3Majority : Accesses 129955660, Mispredictions 6498666 (0.0500068), Forward Branches 103895972, Forward Mispredictions 5274238 (0.0507646), Backward Branches 26059688, Backward Mispredictions 1224428 (0.0469855)
-Combined3 : Accesses 129955660, Mispredictions 3608232 (0.0277651), Forward Branches 103895972, Forward Mispredictions 2993821 (0.0288156), Backward Branches 26059688, Backward Mispredictions 614411 (0.0235771)
+FNBT : Accesses 129954737, Mispredictions 53621175 (0.412614), Forward Branches 103818367, Forward Mispredictions 38950108 (0.375176), Backward Branches 26136370, Backward Mispredictions 14671067 (0.561328)
+Bimodal : Accesses 129954737, Mispredictions 12439236 (0.0957198), Forward Branches 103818367, Forward Mispredictions 10398365 (0.100159), Backward Branches 26136370, Backward Mispredictions 2040871 (0.0780855)
+SAg : Accesses 129954737, Mispredictions 4785772 (0.0368265), Forward Branches 103818367, Forward Mispredictions 3922265 (0.0377801), Backward Branches 26136370, Backward Mispredictions 863507 (0.0330385)
+GAg : Accesses 129954737, Mispredictions 15347257 (0.118097), Forward Branches 103818367, Forward Mispredictions 12973699 (0.124965), Backward Branches 26136370, Backward Mispredictions 2373558 (0.0908144)
+gshare : Accesses 129954737, Mispredictions 13290364 (0.102269), Forward Branches 103818367, Forward Mispredictions 10760835 (0.103651), Backward Branches 26136370, Backward Mispredictions 2529529 (0.096782)
+Combined2 : Accesses 129954737, Mispredictions 4037252 (0.0310666), Forward Branches 103818367, Forward Mispredictions 3327708 (0.0320532), Backward Branches 26136370, Backward Mispredictions 709544 (0.0271478)
+Combined3Majority : Accesses 129954737, Mispredictions 6540478 (0.0503289), Forward Branches 103818367, Forward Mispredictions 5310923 (0.0511559), Backward Branches 26136370, Backward Mispredictions 1229555 (0.0470438)
+Combined3 : Accesses 129954737, Mispredictions 3644418 (0.0280437), Forward Branches 103818367, Forward Mispredictions 3035208 (0.0292358), Backward Branches 26136370, Backward Mispredictions 609210 (0.0233089)
 
 ===============================================
 Branch Target Predictors
-BTB1 : Accesses 28088096, Misses 3188 (0.0001135), Mispredictions 9945328 (0.354076)
-BTB2 : Accesses 28088096, Misses 434188 (0.0154581), Mispredictions 2928550 (0.104263)
+BTB1 : Accesses 28080649, Misses 3150 (0.000112177), Mispredictions 9984145 (0.355553)
+BTB2 : Accesses 28080649, Misses 441559 (0.0157247), Mispredictions 2947042 (0.104949)
 
 ===============================================
-Time taken : 320.783 seconds.
+Time taken : 326.273 seconds.
