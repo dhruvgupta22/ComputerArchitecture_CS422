@@ -9,16 +9,16 @@ Total accesses = 133359138
         \hline
         \multirow{2}{*}{Direction Predictors} & \multicolumn{2}{c|}{Forward Mispredictions} & \multicolumn{2}{c|}{Backward Mispredictions} & \multicolumn{2}{c|}{Total Mispredictions} \\
         \cline{2-7}
-        & Count & Percentage & Count & Percentage & Count & Percentage \\
+        & Count & Fraction & Count & Fraction & Count & Fraction \\
         \hline
-            \textbf{FNBT} & 9221432 & 31.7892 & 4786390 & 4.58682 & 14007822 & 10.5038 \\
-            \textbf{Bimodal} & 3644738 & 12.5645 & 2097715 & 2.01025 & 5742453 & 4.30601 \\
-            \textbf{SAg} & 2207403 & 7.60961 & 1390672 & 1.33269 & 3598075 & 2.69803 \\
-            \textbf{GAg} & 3469530 & 11.9606 & 1982473 & 1.89981 & 5452003 & 4.08821 \\
-            \textbf{gshare} & 3429553 & 11.8227 & 1796711 & 1.7218 & 5226264 & 3.91894 \\
-            \textbf{Combined2} & 1666753 & 5.74582 & 1086361 & 1.04106 & 2753114 & 2.06444 \\
-            \textbf{Combined3Majority} & 2052403 & 7.07527 & 1303034 & 1.2487 & 3355437 & 2.51609 \\
-            \textbf{Combined3} & 1491920 & 5.14311 & 995831 & 0.954309 & 2487751 & 1.86545 \\
+            \textbf{FNBT} & 9221432 & 0.317892 & 4786390 & 0.0458682 & 14007822 & 0.105038 \\
+            \textbf{Bimodal} & 3644738 & 0.125645 & 2097715 & 0.0201025 & 5742453 & 0.0430601 \\
+            \textbf{SAg} & 2207403 & 0.0760961 & 1390672 & 0.0133269 & 3598075 & 0.0269803 \\
+            \textbf{GAg} & 3469530 & 0.119606 & 1982473 & 0.0189981 & 5452003 & 0.0408821 \\
+            \textbf{gshare} & 3429553 & 0.118227 & 1796711 & 0.017218 & 5226264 & 0.0391894 \\
+            \textbf{Combined2} & 1666753 & 0.0574582 & 1086361 & 0.0104106 & 2753114 & 0.0206444 \\
+            \textbf{Combined3Majority} & 2052403 & 0.0707527 & 1303034 & 0.012487 & 3355437 & 0.0251609 \\
+            \textbf{Combined3} & 1491920 & 0.0514311 & 995831 & 0.00954309 & 2487751 & 0.0186545 \\
         \hline
         \end{tabular}
     \end{table}
@@ -32,10 +32,10 @@ Accesses = 7037463 \\
         \hline
         \multirow{2}{*}{Target Predictors} & \multicolumn{2}{c|}{Misses} & \multicolumn{2}{c|}{Mispredictions} \\
         \cline{2-5}
-        & Count & Percentage & Count & Percentage \\
+        & Count & Fraction & Count & Fraction \\
         \hline
-            \textbf{BTB1}  & 472 & 0.006707 & 2503519 & 35.5742 \\
-            \textbf{BTB2}  & 55245 & 0.785013 & 850415 & 12.0841 \\
+            \textbf{BTB1}  & 472 & 6.70696e-05 & 2503519 & 0.355742 \\
+            \textbf{BTB2}  & 55245 & 0.00785013 & 850415 & 0.120841 \\
         \hline
         \end{tabular}
     \end{table}

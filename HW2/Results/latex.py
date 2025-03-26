@@ -11,7 +11,7 @@ def parse_data1(data):
         if "Time taken" in line:
             match = re.match(r"Time taken : ([^)]+) seconds.", line)
             if match:
-                time = str(round(float(match.group(1)), 6))
+                time = match.group(1)
         elif "Direction Predictors" in line:
             section = "direction"
         elif "Branch Target Predictors" in line:
@@ -22,13 +22,13 @@ def parse_data1(data):
                 name = match.group(1)
                 access = match.group(2)
                 mispred = match.group(3)
-                mispred_percent = str(round(float(match.group(4)) * 100, 6))
+                mispred_percent = match.group(4)
                 forw_br = match.group(5)
                 forw_mispred = match.group(6)
-                forw_mispred_percent = str(round(float(match.group(7)) * 100, 6))
+                forw_mispred_percent = match.group(7)
                 back_br = match.group(8)
                 back_mispred = match.group(9)
-                back_mispred_percent = str(round(float(match.group(10)) * 100, 6))
+                back_mispred_percent = match.group(10)
                 direction_predictors.append((name, access, mispred, mispred_percent, forw_br, forw_mispred, forw_mispred_percent, back_br, back_mispred, back_mispred_percent))
 
         elif section == "target":
@@ -37,9 +37,9 @@ def parse_data1(data):
                 name = match.group(1)
                 access = match.group(2)
                 misses = match.group(3)
-                miss_perc = str(round(float(match.group(4)) * 100, 6))
+                miss_perc = match.group(4)
                 mispredictions = match.group(5)
-                misprediction_perc = str(round(float(match.group(6)) * 100, 6))
+                misprediction_perc = match.group(6)
                 target_predictors.append((name, access, misses, miss_perc, mispredictions, misprediction_perc))
     return direction_predictors, target_predictors, time
 
@@ -53,7 +53,7 @@ def generate_latex(direction_predictors, target_predictors, time):
         \\hline
         \\multirow{2}{*}{Direction Predictors} & \\multicolumn{2}{c|}{Forward Mispredictions} & \\multicolumn{2}{c|}{Backward Mispredictions} & \\multicolumn{2}{c|}{Total Mispredictions} \\\\
         \\cline{2-7}
-        & Count & Percentage & Count & Percentage & Count & Percentage \\\\
+        & Count & Fraction & Count & Fraction & Count & Fraction \\\\
         \\hline
 """
     for dp in direction_predictors:
@@ -72,7 +72,7 @@ def generate_latex(direction_predictors, target_predictors, time):
         \\hline
         \\multirow{2}{*}{Target Predictors} & \\multicolumn{2}{c|}{Misses} & \\multicolumn{2}{c|}{Mispredictions} \\\\
         \\cline{2-5}
-        & Count & Percentage & Count & Percentage \\\\
+        & Count & Fraction & Count & Fraction \\\\
         \\hline
 """
     for tp in target_predictors:
