@@ -1,0 +1,45 @@
+Forward branches = 33953130 \\
+Backward branches = 69184002 \\
+Total accesses = 103137132
+
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabular}{|c|c c|c c|c c|}
+        \hline
+        \multirow{2}{*}{Direction Predictors} & \multicolumn{2}{c|}{Forward Mispredictions} & \multicolumn{2}{c|}{Backward Mispredictions} & \multicolumn{2}{c|}{Total Mispredictions} \\
+        \cline{2-7}
+        & Count & Percentage & Count & Percentage & Count & Percentage \\
+        \hline
+            \textbf{FNBT} & 6805028 & 20.0424 & 10880390 & 15.7267 & 17685418 & 17.1475 \\
+            \textbf{Bimodal} & 339431 & 0.999705 & 4676429 & 6.75941 & 5015860 & 4.86329 \\
+            \textbf{SAg} & 255235 & 0.751727 & 3945272 & 5.70258 & 4200507 & 4.07274 \\
+            \textbf{GAg} & 331989 & 0.977786 & 3679769 & 5.31881 & 4011758 & 3.88973 \\
+            \textbf{gshare} & 487190 & 1.43489 & 3704890 & 5.35513 & 4192080 & 4.06457 \\
+            \textbf{Combined2} & 252170 & 0.7427 & 3507701 & 5.0701 & 3759871 & 3.64551 \\
+            \textbf{Combined3Majority} & 311989 & 0.918881 & 3664166 & 5.29626 & 3976155 & 3.85521 \\
+            \textbf{Combined3} & 251880 & 0.741846 & 3506822 & 5.06883 & 3758702 & 3.64437 \\
+        \hline
+        \end{tabular}
+    \end{table}
+
+\subsection*{Part B: Target Predictors for indirect control flow instructions}
+Accesses = 6333797 \\
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabular}{|c|c c|c c|}
+        \hline
+        \multirow{2}{*}{Target Predictors} & \multicolumn{2}{c|}{Misses} & \multicolumn{2}{c|}{Mispredictions} \\
+        \cline{2-5}
+        & Count & Percentage & Count & Percentage \\
+        \hline
+            \textbf{BTB1}  & 120 & 0.001895 & 1571 & 0.024803 \\
+            \textbf{BTB2}  & 530 & 0.008368 & 2069 & 0.032666 \\
+        \hline
+        \end{tabular}
+    \end{table}
+
+\begin{itemize}
+\end{itemize}
+Total Time taken (seconds) = 2249.55 \\

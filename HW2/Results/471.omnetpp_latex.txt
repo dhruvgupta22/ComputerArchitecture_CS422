@@ -1,0 +1,45 @@
+Forward branches = 98390055 \\
+Backward branches = 18945252 \\
+Total accesses = 117335307
+
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabular}{|c|c c|c c|c c|}
+        \hline
+        \multirow{2}{*}{Direction Predictors} & \multicolumn{2}{c|}{Forward Mispredictions} & \multicolumn{2}{c|}{Backward Mispredictions} & \multicolumn{2}{c|}{Total Mispredictions} \\
+        \cline{2-7}
+        & Count & Percentage & Count & Percentage & Count & Percentage \\
+        \hline
+            \textbf{FNBT} & 33181779 & 33.7247 & 6855275 & 36.1847 & 40037054 & 34.1219 \\
+            \textbf{Bimodal} & 9571097 & 9.72771 & 2631456 & 13.8898 & 12202553 & 10.3997 \\
+            \textbf{SAg} & 4291866 & 4.36209 & 1578422 & 8.33149 & 5870288 & 5.003 \\
+            \textbf{GAg} & 11636156 & 11.8266 & 2717203 & 14.3424 & 14353359 & 12.2328 \\
+            \textbf{gshare} & 10212021 & 10.3791 & 2511212 & 13.2551 & 12723233 & 10.8435 \\
+            \textbf{Combined2} & 3526308 & 3.58401 & 1306673 & 6.8971 & 4832981 & 4.11895 \\
+            \textbf{Combined3Majority} & 4686942 & 4.76363 & 1747902 & 9.22607 & 6434844 & 5.48415 \\
+            \textbf{Combined3} & 3328346 & 3.38281 & 1247418 & 6.58433 & 4575764 & 3.89973 \\
+        \hline
+        \end{tabular}
+    \end{table}
+
+\subsection*{Part B: Target Predictors for indirect control flow instructions}
+Accesses = 30294671 \\
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabular}{|c|c c|c c|}
+        \hline
+        \multirow{2}{*}{Target Predictors} & \multicolumn{2}{c|}{Misses} & \multicolumn{2}{c|}{Mispredictions} \\
+        \cline{2-5}
+        & Count & Percentage & Count & Percentage \\
+        \hline
+            \textbf{BTB1}  & 5704 & 0.018828 & 8894811 & 29.361 \\
+            \textbf{BTB2}  & 266173 & 0.878613 & 3525586 & 11.6376 \\
+        \hline
+        \end{tabular}
+    \end{table}
+
+\begin{itemize}
+\end{itemize}
+Total Time taken (seconds) = 113.412 \\

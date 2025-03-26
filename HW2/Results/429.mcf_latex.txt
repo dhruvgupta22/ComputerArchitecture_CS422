@@ -1,0 +1,45 @@
+Forward branches = 89125395 \\
+Backward branches = 89117389 \\
+Total accesses = 178242784
+
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabular}{|c|c c|c c|c c|}
+        \hline
+        \multirow{2}{*}{Direction Predictors} & \multicolumn{2}{c|}{Forward Mispredictions} & \multicolumn{2}{c|}{Backward Mispredictions} & \multicolumn{2}{c|}{Total Mispredictions} \\
+        \cline{2-7}
+        & Count & Percentage & Count & Percentage & Count & Percentage \\
+        \hline
+            \textbf{FNBT} & 31825606 & 35.7088 & 25122125 & 28.1899 & 56947731 & 31.9495 \\
+            \textbf{Bimodal} & 14517040 & 16.2883 & 17602407 & 19.7519 & 32119447 & 18.0201 \\
+            \textbf{SAg} & 13456319 & 15.0982 & 9804767 & 11.0021 & 23261086 & 13.0502 \\
+            \textbf{GAg} & 8224077 & 9.22753 & 8327341 & 9.34424 & 16551418 & 9.28588 \\
+            \textbf{gshare} & 9222757 & 10.3481 & 8992760 & 10.0909 & 18215517 & 10.2195 \\
+            \textbf{Combined2} & 7976627 & 8.94989 & 7664728 & 8.60071 & 15641355 & 8.77531 \\
+            \textbf{Combined3Majority} & 7808204 & 8.76092 & 7666036 & 8.60218 & 15474240 & 8.68155 \\
+            \textbf{Combined3} & 7616136 & 8.54542 & 7361849 & 8.26084 & 14977985 & 8.40314 \\
+        \hline
+        \end{tabular}
+    \end{table}
+
+\subsection*{Part B: Target Predictors for indirect control flow instructions}
+Accesses = 12556369 \\
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabular}{|c|c c|c c|}
+        \hline
+        \multirow{2}{*}{Target Predictors} & \multicolumn{2}{c|}{Misses} & \multicolumn{2}{c|}{Mispredictions} \\
+        \cline{2-5}
+        & Count & Percentage & Count & Percentage \\
+        \hline
+            \textbf{BTB1}  & 9 & 7.2e-05 & 77032 & 0.613489 \\
+            \textbf{BTB2}  & 105 & 0.000836 & 51470 & 0.409911 \\
+        \hline
+        \end{tabular}
+    \end{table}
+
+\begin{itemize}
+\end{itemize}
+Total Time taken (seconds) = 879.633 \\
