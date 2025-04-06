@@ -1,0 +1,18 @@
+===============================================
+Direction Predictors
+FNBT : Accesses 144361452, Mispredictions 92268038 (0.639146), Forward Branches 120193655, Forward Mispredictions 92106156 (0.766315), Backward Branches 24167797, Backward Mispredictions 161882 (0.00669825)
+Bimodal : Accesses 144361452, Mispredictions 12350188 (0.0855505), Forward Branches 120193655, Forward Mispredictions 12264670 (0.102041), Backward Branches 24167797, Backward Mispredictions 85518 (0.00353851)
+SAg : Accesses 144361452, Mispredictions 13173615 (0.0912544), Forward Branches 120193655, Forward Mispredictions 13057518 (0.108637), Backward Branches 24167797, Backward Mispredictions 116097 (0.00480379)
+GAg : Accesses 144361452, Mispredictions 16989697 (0.117689), Forward Branches 120193655, Forward Mispredictions 16369604 (0.136194), Backward Branches 24167797, Backward Mispredictions 620093 (0.0256578)
+gshare : Accesses 144361452, Mispredictions 14831830 (0.102741), Forward Branches 120193655, Forward Mispredictions 14177794 (0.117958), Backward Branches 24167797, Backward Mispredictions 654036 (0.0270623)
+Combined2 : Accesses 144361452, Mispredictions 12476657 (0.0864265), Forward Branches 120193655, Forward Mispredictions 12290540 (0.102256), Backward Branches 24167797, Backward Mispredictions 186117 (0.00770103)
+Combined3Majority : Accesses 144361452, Mispredictions 12543347 (0.0868885), Forward Branches 120193655, Forward Mispredictions 12392156 (0.103102), Backward Branches 24167797, Backward Mispredictions 151191 (0.00625589)
+Combined3 : Accesses 144361452, Mispredictions 12056947 (0.0835192), Forward Branches 120193655, Forward Mispredictions 11956202 (0.0994745), Backward Branches 24167797, Backward Mispredictions 100745 (0.00416856)
+
+===============================================
+Branch Target Predictors
+BTB1 : Accesses 201570, Misses 114 (0.00056556), Mispredictions 12871 (0.0638537)
+BTB2 : Accesses 201570, Misses 850 (0.0042169), Mispredictions 5323 (0.0264077)
+
+===============================================
+Time taken : 244.159 seconds.
