@@ -1,0 +1,5 @@
+File: vadd.log
+Total Instructions: 7259
+% Loads: 6.14%
+% Stores: 16.35%
+% Conditional Branches: 10.57%

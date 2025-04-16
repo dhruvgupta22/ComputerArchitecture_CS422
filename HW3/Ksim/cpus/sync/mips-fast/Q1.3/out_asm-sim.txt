@@ -1,0 +1,5 @@
+File: asm-sim.log
+Total Instructions: 158
+% Loads: 39.24%
+% Stores: 34.81%
+% Conditional Branches: 0%

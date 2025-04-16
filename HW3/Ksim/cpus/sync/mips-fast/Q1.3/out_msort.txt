@@ -1,0 +1,5 @@
+File: msort.log
+Total Instructions: 17219
+% Loads: 10.58%
+% Stores: 5.44%
+% Conditional Branches: 18.12%

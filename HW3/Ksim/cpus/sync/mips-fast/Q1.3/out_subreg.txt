@@ -1,0 +1,5 @@
+File: subreg.log
+Total Instructions: 2111
+% Loads: 19.09%
+% Stores: 11.41%
+% Conditional Branches: 16.91%

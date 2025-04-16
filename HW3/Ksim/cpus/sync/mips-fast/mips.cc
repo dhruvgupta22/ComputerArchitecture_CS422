@@ -7,6 +7,17 @@ Mipc::Mipc (Mem *m) : _l('M')
    _mem = m;
    _sys = new MipcSysCall (this);	// Allocate syscall layer
 
+   /*
+   _if_id_r = new PipeReg();
+   _id_ex_r = new PipeReg();
+   _ex_mem_r = new PipeReg();
+   _mem_wb_r = new PipeReg();
+
+   _if_id_w = new PipeReg();
+   _id_ex_w = new PipeReg();
+   _ex_mem_w = new PipeReg();
+   _mem_wb_w = new PipeReg();
+    */
 #ifdef MIPC_DEBUG
    _debugLog = fopen("mipc.debug", "w");
    assert(_debugLog != NULL);
@@ -20,45 +31,60 @@ Mipc::~Mipc (void)
 
 }
 
+void PipeReg::flush_regs(){
+    _pc = 0;
+    _ins = 0;
+    _decodedSRC1 = 0;
+    _decodedSRC2 = 0;
+    _decodedDEST = 0;
+    _hi = 0; _lo = 0;
+    _decodedShiftAmt = 0;
+}
+
 void 
 Mipc::MainLoop (void)
 {
-   LL addr;
-   unsigned int ins;	// Local instruction register
+    LL addr;
+    unsigned int ins;	// Local instruction register
 
-   Assert (_boot, "Mipc::MainLoop() called without boot?");
+    Assert (_boot, "Mipc::MainLoop() called without boot?");
 
-   _nfetched = 0;
+    _nfetched = 0;
 
-   while (!_sim_exit) {
-     AWAIT_P_PHI0;	// @posedge
-     if (_insDone) {
-        addr = _pc;
-        ins = _mem->BEGetWord (addr, _mem->Read(addr & ~(LL)0x7));
+    while (!_sim_exit) {
+        AWAIT_P_PHI0;	// @posedge
+        /* Do nothing in positive half cycle */
+     
         AWAIT_P_PHI1;	// @negedge
+        /* Work in negative half cycle */
+#ifdef BRANCH_INTERLOCK_ENABLED
+        addr = _pc
+        if(_stall){
+            ins = 0;
+        }
+#endif
+        else{
+            ins = _mem->BEGetWord (addr, _mem->Read(addr & ~(LL)0x7));
+            _if_id_w._pc = _pc;
+            _if_id_w._ins = ins;
 #ifdef MIPC_DEBUG
         fprintf(_debugLog, "<%llu> Fetched ins %#x from PC %#x\n", SIM_TIME, ins, _pc);
 #endif
-        _ins = ins;
-        _insValid = TRUE;
-        _insDone = FALSE;
-        _nfetched++;
-        _bdslot = 0;
-     }
-     else {
-        PAUSE(1);
-     }
-   }
+            //_ins = ins;
+            _nfetched++;
+            _pc += 4;
+        }
+    }
 
-   MipcDumpstats();
-   Log::CloseLog();
+    MipcDumpstats();
+    Log::CloseLog();
    
 #ifdef MIPC_DEBUG
-   assert(_debugLog != NULL);
-   fclose(_debugLog);
+    assert(_debugLog != NULL);
+    fclose(_debugLog);
 #endif
 
-   exit(0);
+    exit(0);
 }
 
 void
@@ -123,11 +149,6 @@ Mipc::Reboot (char *image)
 
       // Reset state
       _ins = 0;
-      _insValid = FALSE;
-      _decodeValid = FALSE;
-      _execValid = FALSE;
-      _memValid = FALSE;
-      _insDone = TRUE;
 
       _num_load = 0;
       _num_store = 0;

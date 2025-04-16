@@ -1,0 +1,5 @@
+File: ifib.log
+Total Instructions: 7581
+% Loads: 16.98%
+% Stores: 10.01%
+% Conditional Branches: 17.50%

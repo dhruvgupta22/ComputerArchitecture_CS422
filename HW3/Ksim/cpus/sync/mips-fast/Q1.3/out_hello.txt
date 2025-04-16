@@ -1,0 +1,5 @@
+File: hello.log
+Total Instructions: 1744
+% Loads: 19.09%
+% Stores: 8.60%
+% Conditional Branches: 19.61%

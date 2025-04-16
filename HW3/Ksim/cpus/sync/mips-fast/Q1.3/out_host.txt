@@ -1,0 +1,5 @@
+File: host.log
+Total Instructions: 14894
+% Loads: 20.10%
+% Stores: 9.92%
+% Conditional Branches: 19.22%

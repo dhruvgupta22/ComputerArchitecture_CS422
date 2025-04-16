@@ -1,0 +1,5 @@
+File: fib.log
+Total Instructions: 44903
+% Loads: 13.59%
+% Stores: 17.77%
+% Conditional Branches: 8.34%

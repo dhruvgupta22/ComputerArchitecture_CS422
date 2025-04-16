@@ -1,0 +1,5 @@
+File: ifactorial.log
+Total Instructions: 2420
+% Loads: 16.48%
+% Stores: 7.85%
+% Conditional Branches: 19.25%

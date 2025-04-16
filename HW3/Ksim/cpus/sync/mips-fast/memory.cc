@@ -14,7 +14,7 @@ Memory::MainLoop (void)
 
    while (1) {
       AWAIT_P_PHI0;	// @posedge
-      if (_mc->_execValid) {
+      if (1) {
          memControl = _mc->_memControl;
          AWAIT_P_PHI1;       // @negedge
          if (memControl) {
@@ -28,8 +28,6 @@ Memory::MainLoop (void)
             fprintf(_mc->_debugLog, "<%llu> Memory has nothing to do for ins %#x\n", SIM_TIME, _mc->_ins);
 #endif
          }
-         _mc->_execValid = FALSE;
-         _mc->_memValid = TRUE;
       }
       else {
          PAUSE(1);

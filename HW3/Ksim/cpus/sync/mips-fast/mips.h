@@ -6,6 +6,7 @@
 class Mipc;
 class MipcSysCall;
 class SysCall;
+class PipeReg;
 
 typedef unsigned Bool;
 #define TRUE 1
@@ -26,6 +27,8 @@ typedef unsigned Bool;
 #include "queue.h"
 
 #define MIPC_DEBUG 1
+
+#define BRANCH_INTERLOCK_ENABLED 1
 
 class Mipc : public SimObject {
 public:
@@ -49,11 +52,6 @@ public:
 
    /* processor state */
    unsigned int _ins;   // instruction register
-   Bool         _insValid;      // Needed for unpipelined design
-   Bool         _decodeValid;   // Needed for unpipelined design
-   Bool		_execValid;	// Needed for unpipelined design
-   Bool		_memValid;	// Needed for unpipelined design
-   Bool         _insDone;       // Needed for unpipelined design
 
    signed int	_decodedSRC1, _decodedSRC2;	// Reg fetch output (source values)
    unsigned	_decodedDST;			// Decoder output (dest reg no)
@@ -82,7 +80,8 @@ public:
    int 		_btaken; 			// taken branch (1 if taken, 0 if fall-through)
    int 		_bdslot;				// 1 if the next ins is delay slot
    unsigned int	_btgt;				// branch target
-
+    int _stall;             // if 1, fetcher is stalled
+    
    Bool		_isSyscall;			// 1 if system call
    Bool		_isIllegalOp;			// 1 if illegal opcode
 
@@ -103,6 +102,9 @@ public:
 
    void (*_opControl)(Mipc*, unsigned);
    void (*_memOp)(Mipc*);
+
+   PipeReg _if_id_r, _id_ex_r, _ex_mem_r, _mem_wb_r;
+   PipeReg _if_id_w, _id_ex_w, _ex_mem_w, _mem_wb_w;
 
    FILE *_debugLog;
 
@@ -217,4 +219,15 @@ private:
 
    Mipc *_ms;
 };
+
+class PipeReg{
+  public:
+    unsigned int _pc;
+    unsigned int _ins;
+    signed int _decodedSRC1, _decodedSRC2;
+    unsigned _decodedDST;
+    unsigned int _hi, _lo;
+    unsigned _decodedShiftAmt;
+    
+}
 #endif /* __MIPS_H__ */

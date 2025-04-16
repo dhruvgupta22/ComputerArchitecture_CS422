@@ -1,0 +1,5 @@
+File: towers.log
+Total Instructions: 82763
+% Loads: 20.05%
+% Stores: 8.48%
+% Conditional Branches: 20.54%

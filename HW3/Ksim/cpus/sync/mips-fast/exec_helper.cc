@@ -622,6 +622,15 @@ Mipc::Dec (unsigned int ins)
       _memControl = FALSE;
       break;
    }
+   _if_id_r._pc = _pc;
+   _if_id_r._ins = _ins;
+   _if_id_r._decodedSRC1 = _decodedSRC1;
+   _if_id_r._decodedSRC2 = _decodedSRC2;
+   _if_id_r._decodedDEST = _decodedDEST;
+   _if_id_r._hi = _hi;
+   _if_id_r._lo = _lo;
+   _if_id_r._decodedShiftAmt = _decodedShiftAmt;
+    
 }
 
 

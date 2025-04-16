@@ -1,5 +1,4 @@
 #include "decode.h"
-#include <sim.h>
 
 Decode::Decode (Mipc *mc)
 {
@@ -11,21 +10,19 @@ Decode::~Decode (void) {}
 void
 Decode::MainLoop (void)
 {
-   unsigned int ins;
-   while (1) {
-      AWAIT_P_PHI0;	// @posedge
-      if (_mc->_insValid) {
-         ins = _mc->_ins;
-         AWAIT_P_PHI1;	// @negedge
-         _mc->Dec(ins);
+    unsigned int ins;
+    while (1) {
+        AWAIT_P_PHI0;	// @posedge
+        /* Do Nothing in first half*/
+        _mc->_if_id_r = _mc->if_id_w;
+        ins = _mc->_if_id_r._ins;
+       
+        AWAIT_P_PHI1;	// @negedge
+        /* Work in second half */
+        _mc->Dec(ins);
 #ifdef MIPC_DEBUG
-         fprintf(_mc->_debugLog, "<%llu> Decoded ins %#x\n", SIM_TIME, ins);
+        fprintf(_mc->_debugLog, "<%llu> Decoded ins %#x\n", SIM_TIME, ins);
 #endif
-         _mc->_insValid = FALSE;
-         _mc->_decodeValid = TRUE;
-      }
-      else {
-         PAUSE(1);
-      }
-   }
+		  _id_ex_w = _if_id_r;
+    }
 }

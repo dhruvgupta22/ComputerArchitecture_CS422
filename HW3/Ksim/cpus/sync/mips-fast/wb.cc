@@ -23,7 +23,7 @@ Writeback::MainLoop (void)
    while (1) {
       AWAIT_P_PHI0;	// @posedge
       // Sample the important signals
-      if (_mc->_memValid) {
+      if (1) {
          writeReg = _mc->_writeREG;
          writeFReg = _mc->_writeFREG;
          loWPort = _mc->_loWPort;
@@ -80,8 +80,6 @@ Writeback::MainLoop (void)
             }
          }
          _mc->_gpr[0] = 0;
-         _mc->_memValid = FALSE;
-         _mc->_insDone = TRUE;
       }
       else {
          PAUSE(1);
