@@ -1,4 +1,5 @@
 #include "decode.h"
+#include <sim.h>
 
 Decode::Decode (Mipc *mc)
 {

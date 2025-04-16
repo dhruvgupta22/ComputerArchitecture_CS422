@@ -649,9 +649,10 @@ Mipc::dumpregs (void)
 void
 Mipc::func_add_addu (Mipc *mc, unsigned ins)
 {
-   printf("Encountered unimplemented instruction: add or addu.\n");
-   printf("You need to fill in func_add_addu in exec_helper.cc to proceed forward.\n");
-   exit(0);
+   mc->_opResultLo = (unsigned)((unsigned)mc->_decodedSRC1 + (unsigned)mc->_decodedSRC2);
+   // printf("Encountered unimplemented instruction: add or addu.\n");
+   // printf("You need to fill in func_add_addu in exec_helper.cc to proceed forward.\n");
+   // exit(0);
 }
 
 void
@@ -681,9 +682,10 @@ Mipc::func_sll (Mipc *mc, unsigned ins)
 void
 Mipc::func_sllv (Mipc *mc, unsigned ins)
 {
-   printf("Encountered unimplemented instruction: sllv.\n");
-   printf("You need to fill in func_sllv in exec_helper.cc to proceed forward.\n");
-   exit(0);
+   mc->_opResultLo = mc->_decodedSRC2 << (mc->_decodedSRC1 & 0x1f);
+   // printf("Encountered unimplemented instruction: sllv.\n");
+   // printf("You need to fill in func_sllv in exec_helper.cc to proceed forward.\n");
+   // exit(0);
 }
 
 void
@@ -878,9 +880,11 @@ Mipc::func_syscall (Mipc *mc, unsigned ins)
 void
 Mipc::func_addi_addiu (Mipc *mc, unsigned ins)
 {
-   printf("Encountered unimplemented instruction: addi or addiu.\n");
-   printf("You need to fill in func_addi_addiu in exec_helper.cc to proceed forward.\n");
-   exit(0);
+   SIGN_EXTEND_IMM(mc->_decodedSRC2);
+   mc->_opResultLo = (unsigned)((unsigned)mc->_decodedSRC1 +  (unsigned)mc->_decodedSRC2);
+   // printf("Encountered unimplemented instruction: addi or addiu.\n");
+   // printf("You need to fill in func_addi_addiu in exec_helper.cc to proceed forward.\n");
+   // exit(0);
 }
 
 void
@@ -892,17 +896,19 @@ Mipc::func_andi (Mipc *mc, unsigned ins)
 void
 Mipc::func_lui (Mipc *mc, unsigned ins)
 {
-   printf("Encountered unimplemented instruction: lui.\n");
-   printf("You need to fill in func_lui in exec_helper.cc to proceed forward.\n");
-   exit(0);
+   mc->_opResultLo = (unsigned)mc->_decodedSRC2 << 16;
+   // printf("Encountered unimplemented instruction: lui.\n");
+   // printf("You need to fill in func_lui in exec_helper.cc to proceed forward.\n");
+   // exit(0);
 }
 
 void
 Mipc::func_ori (Mipc *mc, unsigned ins)
 {
-   printf("Encountered unimplemented instruction: ori.\n");
-   printf("You need to fill in func_ori in exec_helper.cc to proceed forward.\n");
-   exit(0);
+   mc->_opResultLo = (unsigned)mc->_decodedSRC1 | (unsigned)mc->_decodedSRC2;
+   // printf("Encountered unimplemented instruction: ori.\n");
+   // printf("You need to fill in func_ori in exec_helper.cc to proceed forward.\n");
+   // exit(0);
 }
 
 void
@@ -939,9 +945,10 @@ void
 Mipc::func_beq (Mipc *mc, unsigned ins)
 {
    mc->_num_cond_br++;
-   printf("Encountered unimplemented instruction: beq.\n");
-   printf("You need to fill in func_beq in exec_helper.cc to proceed forward.\n");
-   exit(0);
+   mc->_btaken = (mc->_decodedSRC1 == mc->_decodedSRC2) ? 1 : 0;
+   // printf("Encountered unimplemented instruction: beq.\n");
+   // printf("You need to fill in func_beq in exec_helper.cc to proceed forward.\n");
+   // exit(0);
 }
 
 void
@@ -1005,9 +1012,11 @@ void
 Mipc::func_jal (Mipc *mc, unsigned ins)
 {
    mc->_num_jal++;
-   printf("Encountered unimplemented instruction: jal.\n");
-   printf("You need to fill in func_jal in exec_helper.cc to proceed forward.\n");
-   exit(0);
+   mc->_btaken = 1;
+   mc->_opResultLo = mc->_pc + 8;
+   // printf("Encountered unimplemented instruction: jal.\n");
+   // printf("You need to fill in func_jal in exec_helper.cc to proceed forward.\n");
+   // exit(0);
 }
 
 void
@@ -1061,9 +1070,11 @@ void
 Mipc::func_lw (Mipc *mc, unsigned ins)
 {
    mc->_num_load++;
-   printf("Encountered unimplemented instruction: lw.\n");
-   printf("You need to fill in func_lw in exec_helper.cc to proceed forward.\n");
-   exit(0);
+   SIGN_EXTEND_IMM(mc->_decodedSRC2);
+   mc->_memory_addr_reg = (unsigned)(mc->_decodedSRC1+mc->_decodedSRC2);
+   // printf("Encountered unimplemented instruction: lw.\n");
+   // printf("You need to fill in func_lw in exec_helper.cc to proceed forward.\n");
+   // exit(0);
 }
 
 void

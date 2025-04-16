@@ -30,8 +30,9 @@
  * logged (level = '*').
  */
 #include <stdio.h>
-#include <iostream.h>
+#include <iostream>
 #include "mytime.h"
+using namespace std;
 
 class LogHexInt { };
 class LogDecInt { };
