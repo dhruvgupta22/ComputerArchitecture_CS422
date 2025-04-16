@@ -224,10 +224,27 @@ class PipeReg{
   public:
     unsigned int _pc;
     unsigned int _ins;
-    signed int _decodedSRC1, _decodedSRC2;
+    signed int _decodedSRC1;
+    signed int _decodedSRC2;
     unsigned _decodedDST;
-    unsigned int _hi, _lo;
+    Bool _writeREG;
+    Bool _writeFREG;
+    Bool _hiWPort;
+    Bool _loWPort;
+    Bool _memControl;
     unsigned _decodedShiftAmt;
-    
+    unsigned int _btgt;
+    int _bdslot;
+    Bool _isSyscall;
+    Bool _isIllegalOp;
+    signed int _branchOffset;
+    unsigned int _hi, _lo;
+    Bool _branch_stall;
+    Bool _data_stall;
+    Bool _lastbdslot;
+    Bool _btaken;
+
+    void (*_opControl)(Mipc*, unsigned);
+    void (*_memOp)(Mipc*);    
 }
 #endif /* __MIPS_H__ */

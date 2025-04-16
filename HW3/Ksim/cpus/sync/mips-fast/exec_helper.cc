@@ -626,11 +626,20 @@ Mipc::Dec (unsigned int ins)
    _if_id_r._ins = _ins;
    _if_id_r._decodedSRC1 = _decodedSRC1;
    _if_id_r._decodedSRC2 = _decodedSRC2;
-   _if_id_r._decodedDEST = _decodedDEST;
-   _if_id_r._hi = _hi;
-   _if_id_r._lo = _lo;
+   _if_id_r._decodedDST = _decodedDST;
+   _if_id_r._writeREG = _writeREG;
+   _if_id_r._writeFREG = _writeFREG;
+   _if_id_r._hiWPort = _hiWPort;
+   _if_id_r._loWPort = _loWPort;
+   _if_id_r._memControl = _memControl;
    _if_id_r._decodedShiftAmt = _decodedShiftAmt;
-    
+   _if_id_r._btgt = _btgt;
+   _if_id_r._bdslot = _bdslot;
+   _if_id_r._isSyscall = _isSyscall;
+   _if_id_r._isIllegalOp = _isIllegalOp;
+   _if_id_r._branchOffset = _branchOffset;
+   _if_id_r._opControl = _opControl;
+   _if_id_r._memOp = _memOp;
 }
 
 

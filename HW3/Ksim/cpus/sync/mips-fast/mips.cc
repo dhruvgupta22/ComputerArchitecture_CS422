@@ -6,18 +6,6 @@ Mipc::Mipc (Mem *m) : _l('M')
 {
    _mem = m;
    _sys = new MipcSysCall (this);	// Allocate syscall layer
-
-   /*
-   _if_id_r = new PipeReg();
-   _id_ex_r = new PipeReg();
-   _ex_mem_r = new PipeReg();
-   _mem_wb_r = new PipeReg();
-
-   _if_id_w = new PipeReg();
-   _id_ex_w = new PipeReg();
-   _ex_mem_w = new PipeReg();
-   _mem_wb_w = new PipeReg();
-    */
 #ifdef MIPC_DEBUG
    _debugLog = fopen("mipc.debug", "w");
    assert(_debugLog != NULL);
@@ -36,9 +24,25 @@ void PipeReg::flush_regs(){
     _ins = 0;
     _decodedSRC1 = 0;
     _decodedSRC2 = 0;
-    _decodedDEST = 0;
-    _hi = 0; _lo = 0;
-    _decodedShiftAmt = 0;
+    _decodedDST = 0;
+      _writeREG = FALSE;
+      _writeFREG = FALSE;
+      _hiWPort = FALSE;
+      _loWPort = FALSE;
+      _memControl = FALSE;
+      _decodedShiftAmt = 0;
+      _btgt = 0;
+      _bdslot = 0;
+      _isSyscall = FALSE;
+      _isIllegalOp = FALSE;
+      _branchOffset = 0;
+      _hi = 0; 
+      _lo = 0;
+      _branch_stall = FALSE;
+      _data_stall = FALSE;
+      _opControl = NULL;
+      _memOp = NULL;
+
 }
 
 void 
@@ -57,23 +61,20 @@ Mipc::MainLoop (void)
      
         AWAIT_P_PHI1;	// @negedge
         /* Work in negative half cycle */
-#ifdef BRANCH_INTERLOCK_ENABLED
+        #ifdef BRANCH_INTERLOCK_ENABLED
+        #endif
         addr = _pc
-        if(_stall){
-            ins = 0;
-        }
-#endif
-        else{
+      //   else{
             ins = _mem->BEGetWord (addr, _mem->Read(addr & ~(LL)0x7));
+            #ifdef MIPC_DEBUG
+                    fprintf(_debugLog, "<%llu> Fetched ins %#x from PC %#x\n", SIM_TIME, ins, _pc);
+            #endif
             _if_id_w._pc = _pc;
             _if_id_w._ins = ins;
-#ifdef MIPC_DEBUG
-        fprintf(_debugLog, "<%llu> Fetched ins %#x from PC %#x\n", SIM_TIME, ins, _pc);
-#endif
             //_ins = ins;
             _nfetched++;
             _pc += 4;
-        }
+      //   }
     }
 
     MipcDumpstats();

@@ -22,7 +22,8 @@ Exe::MainLoop (void)
         isIllegalOp = _mc->_id_ex_r._isIllegalOp;
         
 		  if (!isSyscall && !isIllegalOp) {
-            _mc->_id_ex_r._opControl(_mc,ins);
+            if(_mc->_id_ex_r._opControl != NULL)
+               _mc->_id_ex_r._opControl(_mc,ins);
 #ifdef MIPC_DEBUG
             fprintf(_mc->_debugLog, "<%llu> Executed ins %#x\n", SIM_TIME, ins);
 #endif
@@ -39,20 +40,13 @@ Exe::MainLoop (void)
          }
 
          if (!isIllegalOp && !isSyscall) {
-            if (_mc->_lastbdslot && _mc->_btaken)
+            if (_mc->_id_ex_r._lastbdslot && _mc->_id_ex_r._btaken)
             {
-               _mc->_pc = _mc->_btgt;
+               _mc->_pc = _mc->_id_ex_r._btgt;
             }
-            else
-            {
-               _mc->_pc = _mc->_pc + 4;
-            }
-            _mc->_lastbdslot = _mc->_bdslot;
+            _mc->_id_ex_r._lastbdslot = _mc->_id_ex_r._bdslot;
          }
-      }
         AWAIT_P_PHI1;	// @negedge
-      else {
-         PAUSE(1);
-      }
+         _mc->_ex_mem_w = _mc->_id_ex_r;
    }
 }
