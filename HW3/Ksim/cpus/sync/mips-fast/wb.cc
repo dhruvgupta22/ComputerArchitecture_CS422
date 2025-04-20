@@ -23,24 +23,24 @@ Writeback::MainLoop (void)
    while (1) {
       AWAIT_P_PHI0;	// @posedge
       // Sample the important signals
-      if (1) {
-         writeReg = _mc->_writeREG;
-         writeFReg = _mc->_writeFREG;
-         loWPort = _mc->_loWPort;
-         hiWPort = _mc->_hiWPort;
-         decodedDST = _mc->_decodedDST;
-         opResultLo = _mc->_opResultLo;
-         opResultHi = _mc->_opResultHi;
-         isSyscall = _mc->_isSyscall;
-         isIllegalOp = _mc->_isIllegalOp;
-         ins = _mc->_ins;
-         AWAIT_P_PHI1;       // @negedge
+      _mc->_mem_wb_r = _mc->_mem_wb_w;
+      writeReg = _mc->_mem_wb_r._writeREG;
+      writeFReg = _mc->_mem_wb_r._writeFREG;
+      loWPort = _mc->_mem_wb_r._loWPort;
+      hiWPort = _mc->_mem_wb_r._hiWPort;
+      decodedDST = _mc->_mem_wb_r._decodedDST;
+      opResultLo = _mc->_mem_wb_r._opResultLo;
+      opResultHi = _mc->_mem_wb_r._opResultHi;
+      isSyscall = _mc->_mem_wb_r._isSyscall;
+      isIllegalOp = _mc->_mem_wb_r._isIllegalOp;
+      ins = _mc->_mem_wb_r._ins;
          if (isSyscall) {
 #ifdef MIPC_DEBUG
             fprintf(_mc->_debugLog, "<%llu> SYSCALL! Trapping to emulation layer at PC %#x\n", SIM_TIME, _mc->_pc);
 #endif      
-            _mc->_opControl(_mc, ins);
-            _mc->_pc += 4;
+            _mc->_mem_wb_r._opControl(_mc, ins);
+            // _mc->_pc =  _mc->_mem_wb_r._pc + 4;
+            _mc->_syscall_present = FALSE;
          }
          else if (isIllegalOp) {
             printf("Illegal ins %#x at PC %#x. Terminating simulation!\n", ins, _mc->_pc);
@@ -78,11 +78,13 @@ Writeback::MainLoop (void)
 #endif
                }
             }
+            else{
+#ifdef MIPC_DEBUG
+               fprintf(_mc->_debugLog, "<%llu> No writeback for ins %#x\n", SIM_TIME, ins);
+#endif
+            }
          }
          _mc->_gpr[0] = 0;
-      }
-      else {
-         PAUSE(1);
-      }
+         AWAIT_P_PHI1;       // @negedge
    }
 }

@@ -19,30 +19,46 @@ Mipc::~Mipc (void)
 
 }
 
-void PipeReg::flush_regs(){
-    _pc = 0;
-    _ins = 0;
-    _decodedSRC1 = 0;
-    _decodedSRC2 = 0;
-    _decodedDST = 0;
-      _writeREG = FALSE;
-      _writeFREG = FALSE;
-      _hiWPort = FALSE;
-      _loWPort = FALSE;
-      _memControl = FALSE;
-      _decodedShiftAmt = 0;
-      _btgt = 0;
-      _bdslot = 0;
-      _isSyscall = FALSE;
-      _isIllegalOp = FALSE;
-      _branchOffset = 0;
-      _hi = 0; 
-      _lo = 0;
-      _branch_stall = FALSE;
-      _data_stall = FALSE;
-      _opControl = NULL;
-      _memOp = NULL;
+PipeReg::PipeReg(){
+   PipeReg::flush_regs();
+}
+PipeReg::~PipeReg(){}
 
+void PipeReg::flush_regs(){
+   _pc = 0;
+   _ins = 0;
+   _decodedSRC1 = 0;
+   _decodedSRC2 = 0;
+   _decodedDST = 0;
+   _writeREG = FALSE;
+   _writeFREG = FALSE;
+   _hiWPort = FALSE;
+   _loWPort = FALSE;
+   _memControl = FALSE;
+   _decodedShiftAmt = 0;
+   _btgt = 0;
+   _bdslot = 0;
+   _isSyscall = FALSE;
+   _isIllegalOp = FALSE;
+   _branchOffset = 0;
+   _hi = 0; 
+   _lo = 0;
+   _data_stall = FALSE;
+   _opControl = NULL;
+   _memOp = NULL;
+   _opResultLo = 0;
+   _opResultHi = 0;
+   _syscall_present = FALSE;
+   _mem_addr_reg = 0;
+   _lastbdslot = FALSE;
+   _btaken = FALSE;
+   _regSRC1 = 0;
+   _regSRC2 = 0;
+   _hiRPort = FALSE;
+   _loRPort = FALSE;
+   _hasFPSRC = FALSE;
+   _subregOperand = 0;
+   
 }
 
 void 
@@ -56,25 +72,44 @@ Mipc::MainLoop (void)
     _nfetched = 0;
 
     while (!_sim_exit) {
+         // #ifdef MIPC_DEBUG
+         // fprintf(_debugLog, "<%llu> Fetcher PC enter %#x\n", SIM_TIME, _pc);
+         // #endif
         AWAIT_P_PHI0;	// @posedge
         /* Do nothing in positive half cycle */
      
         AWAIT_P_PHI1;	// @negedge
         /* Work in negative half cycle */
-        #ifdef BRANCH_INTERLOCK_ENABLED
-        #endif
-        addr = _pc
-      //   else{
+        if(_syscall_present){
+            _if_id_w.flush_regs();
+
+        }
+      //   #ifdef BRANCH_INTERLOCK_ENABLED
+      //   #endif
+        else if(_lastbdslot == 1){
+         _if_id_w.flush_regs();
+         _lastbdslot = 0;
+        }
+
+        else{
+            addr = _pc;
             ins = _mem->BEGetWord (addr, _mem->Read(addr & ~(LL)0x7));
             #ifdef MIPC_DEBUG
-                    fprintf(_debugLog, "<%llu> Fetched ins %#x from PC %#x\n", SIM_TIME, ins, _pc);
+                    fprintf(_debugLog, "<%llu> Fetched ins %#x from PC %#x addr = %#x\n", SIM_TIME, ins, _pc, addr);
             #endif
             _if_id_w._pc = _pc;
             _if_id_w._ins = ins;
-            //_ins = ins;
             _nfetched++;
             _pc += 4;
-      //   }
+            if(_bdslot){
+               _lastbdslot = 1;
+               _bdslot = 0;
+            }
+                
+        }
+      //   #ifdef MIPC_DEBUG
+      //    fprintf(_debugLog, "<%llu> Fetcher PC %#x\n", SIM_TIME, _pc);
+      //    #endif
     }
 
     MipcDumpstats();

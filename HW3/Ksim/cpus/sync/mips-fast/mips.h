@@ -29,6 +29,48 @@ typedef unsigned Bool;
 #define MIPC_DEBUG 1
 
 #define BRANCH_INTERLOCK_ENABLED 1
+#define DEFAULT_REG 0x20
+
+
+class PipeReg{
+   public:
+    PipeReg();
+    ~PipeReg();
+    void flush_regs();
+     unsigned int _pc;
+     unsigned int _ins;
+     signed int _decodedSRC1;
+     signed int _decodedSRC2;
+     unsigned _decodedDST;
+     Bool _writeREG;
+     Bool _writeFREG;
+     Bool _hiWPort;
+     Bool _loWPort;
+     Bool _memControl;
+     unsigned _decodedShiftAmt;
+     unsigned int _btgt;
+     int _bdslot;
+     Bool _isSyscall;
+     Bool _isIllegalOp;
+     signed int _branchOffset;
+     unsigned int _hi, _lo;
+     Bool _data_stall;
+     Bool _lastbdslot;
+     Bool _btaken;
+     unsigned int _opResultLo;
+     unsigned int _opResultHi;
+     unsigned int _mem_addr_reg;
+     Bool _syscall_present;
+     unsigned _regSRC1;
+     unsigned _regSRC2;
+     Bool _hiRPort;
+     Bool _loRPort;
+     Bool _hasFPSRC;
+     unsigned int _subregOperand;
+ 
+     void (*_opControl)(Mipc*, unsigned);
+     void (*_memOp)(Mipc*);    
+ };
 
 class Mipc : public SimObject {
 public:
@@ -63,8 +105,14 @@ public:
    signed int	_branchOffset;
    Bool 	_hiWPort, _loWPort;		// WB control
    unsigned	_decodedShiftAmt;		// Shift amount
-
+   Bool _syscall_present;
    unsigned int 	_gpr[32];		// general-purpose integer registers
+   unsigned _regSRC1;
+   unsigned _regSRC2;
+
+   Bool _hiRPort;
+   Bool _loRPort;
+   Bool _hasFPSRC;
 
    union {
       unsigned int l[2];
@@ -103,8 +151,14 @@ public:
    void (*_opControl)(Mipc*, unsigned);
    void (*_memOp)(Mipc*);
 
-   PipeReg _if_id_r, _id_ex_r, _ex_mem_r, _mem_wb_r;
-   PipeReg _if_id_w, _id_ex_w, _ex_mem_w, _mem_wb_w;
+   PipeReg _if_id_r;
+   PipeReg _id_ex_r;
+   PipeReg _ex_mem_r;
+   PipeReg _mem_wb_r;
+   PipeReg _if_id_w;
+   PipeReg _id_ex_w;
+   PipeReg _ex_mem_w;
+   PipeReg _mem_wb_w;
 
    FILE *_debugLog;
 
@@ -220,31 +274,5 @@ private:
    Mipc *_ms;
 };
 
-class PipeReg{
-  public:
-    unsigned int _pc;
-    unsigned int _ins;
-    signed int _decodedSRC1;
-    signed int _decodedSRC2;
-    unsigned _decodedDST;
-    Bool _writeREG;
-    Bool _writeFREG;
-    Bool _hiWPort;
-    Bool _loWPort;
-    Bool _memControl;
-    unsigned _decodedShiftAmt;
-    unsigned int _btgt;
-    int _bdslot;
-    Bool _isSyscall;
-    Bool _isIllegalOp;
-    signed int _branchOffset;
-    unsigned int _hi, _lo;
-    Bool _branch_stall;
-    Bool _data_stall;
-    Bool _lastbdslot;
-    Bool _btaken;
 
-    void (*_opControl)(Mipc*, unsigned);
-    void (*_memOp)(Mipc*);    
-}
 #endif /* __MIPS_H__ */

@@ -5,7 +5,6 @@
 #include "app_syscall.h"
 
 #define MAGIC_EXEC 0xdeadbeef
-
 /*------------------------------------------------------------------------
  *
  *  Instruction exec 
@@ -29,6 +28,34 @@ Mipc::Dec (unsigned int ins)
 
    i.data = ins;
   
+   unsigned int _pc = _if_id_r._pc;
+   signed int _decodedSRC1 = 0;
+   signed int _decodedSRC2 = 0;
+   unsigned _decodedDST = 0;
+   Bool _writeREG = FALSE;
+   Bool _writeFREG = FALSE;
+   Bool _hiWPort = FALSE;
+   Bool _loWPort = FALSE;
+   Bool _memControl = FALSE;
+   unsigned _decodedShiftAmt = 0;
+   unsigned _subregOperand = 0;
+   unsigned int _btgt = 0;
+   int _bdslot = 0;
+   Bool _isSyscall = FALSE;
+   Bool _isIllegalOp = FALSE;
+   signed int _branchOffset = 0;
+   Bool _data_stall = FALSE;
+   Bool _lastbdslot = FALSE;
+   Bool _btaken = FALSE;
+   unsigned _regSRC1 = DEFAULT_REG;
+   unsigned _regSRC2 = DEFAULT_REG;
+   Bool _hiRPort = FALSE;
+   Bool _loRPort = FALSE;
+   Bool _hasFPSRC = FALSE;
+ 
+   void (*_opControl)(Mipc*, unsigned) = NULL;
+   void (*_memOp)(Mipc*) = NULL;
+
 #define SIGN_EXTEND_BYTE(x)  do { x <<= 24; x >>= 24; } while (0)
 #define SIGN_EXTEND_IMM(x)   do { x <<= 16; x >>= 16; } while (0)
 
@@ -36,7 +63,9 @@ Mipc::Dec (unsigned int ins)
    case 0:
       // SPECIAL (ALU format)
       _decodedSRC1 = _gpr[i.reg.rs];
+      _regSRC1 = i.reg.rs; //
       _decodedSRC2 = _gpr[i.reg.rt];
+      _regSRC2 = i.reg.rt; //
       _decodedDST = i.reg.rd;
       _writeREG = TRUE;
       _writeFREG = FALSE;
@@ -125,10 +154,12 @@ Mipc::Dec (unsigned int ins)
 
       case 0x10:			// mfhi
          _opControl = func_mfhi;
+         _hiRPort = TRUE;
 	 break;
 
       case 0x12:			// mflo
          _opControl = func_mflo;
+         _loRPort = TRUE;
 	 break;
 
       case 0x11:			// mthi
@@ -201,6 +232,7 @@ Mipc::Dec (unsigned int ins)
       // ignore overflow: no exceptions
       _opControl = func_addi_addiu;
       _decodedSRC1 = _gpr[i.imm.rs];
+      _regSRC1 = i.imm.rs; //
       _decodedSRC2 = i.imm.imm;
       _decodedDST = i.imm.rt;
       _writeREG = TRUE;
@@ -213,6 +245,7 @@ Mipc::Dec (unsigned int ins)
    case 0xc:			// andi
       _opControl = func_andi;
       _decodedSRC1 = _gpr[i.imm.rs];
+      _regSRC1 = i.imm.rs; //
       _decodedSRC2 = i.imm.imm;
       _decodedDST = i.imm.rt;
       _writeREG = TRUE;
@@ -236,6 +269,7 @@ Mipc::Dec (unsigned int ins)
    case 0xd:			// ori
       _opControl = func_ori;
       _decodedSRC1 = _gpr[i.imm.rs];
+      _regSRC1 = i.imm.rs; //
       _decodedSRC2 = i.imm.imm;
       _decodedDST = i.imm.rt;
       _writeREG = TRUE;
@@ -248,6 +282,7 @@ Mipc::Dec (unsigned int ins)
    case 0xa:			// slti
       _opControl = func_slti;
       _decodedSRC1 = _gpr[i.imm.rs];
+      _regSRC1 = i.imm.rs; //
       _decodedSRC2 = i.imm.imm;
       _decodedDST = i.imm.rt;
       _writeREG = TRUE;
@@ -260,6 +295,7 @@ Mipc::Dec (unsigned int ins)
    case 0xb:			// sltiu
       _opControl = func_sltiu;
       _decodedSRC1 = _gpr[i.imm.rs];
+      _regSRC1 = i.imm.rs; //
       _decodedSRC2 = i.imm.imm;
       _decodedDST = i.imm.rt;
       _writeREG = TRUE;
@@ -272,6 +308,7 @@ Mipc::Dec (unsigned int ins)
    case 0xe:			// xori
       _opControl = func_xori;
       _decodedSRC1 = _gpr[i.imm.rs];
+      _regSRC1 = i.imm.rs; //
       _decodedSRC2 = i.imm.imm;
       _decodedDST = i.imm.rt;
       _writeREG = TRUE;
@@ -284,7 +321,9 @@ Mipc::Dec (unsigned int ins)
    case 4:			// beq
       _opControl = func_beq;
       _decodedSRC1 = _gpr[i.imm.rs];
+      _regSRC1 = i.imm.rs; //
       _decodedSRC2 = _gpr[i.imm.rt];
+      _regSRC2 = i.imm.rt; //
       _branchOffset = i.imm.imm;
       _writeREG = FALSE;
       _writeFREG = FALSE;
@@ -297,6 +336,7 @@ Mipc::Dec (unsigned int ins)
    case 1:
       // REGIMM
       _decodedSRC1 = _gpr[i.reg.rs];
+      _regSRC1 = i.reg.rs; //
       _branchOffset = i.imm.imm;
       _writeREG = FALSE;
       _writeFREG = FALSE;
@@ -338,6 +378,7 @@ Mipc::Dec (unsigned int ins)
    case 7:			// bgtz
       _opControl = func_bgtz;
       _decodedSRC1 = _gpr[i.reg.rs];
+      _regSRC1 = i.reg.rs; //
       _branchOffset = i.imm.imm;
       _writeREG = FALSE;
       _writeFREG = FALSE;
@@ -350,6 +391,7 @@ Mipc::Dec (unsigned int ins)
    case 6:			// blez
       _opControl = func_blez;
       _decodedSRC1 = _gpr[i.reg.rs];
+      _regSRC1 = i.reg.rs; //
       _branchOffset = i.imm.imm;
       _writeREG = FALSE;
       _writeFREG = FALSE;
@@ -362,7 +404,9 @@ Mipc::Dec (unsigned int ins)
    case 5:			// bne
       _opControl = func_bne;
       _decodedSRC1 = _gpr[i.reg.rs];
+      _regSRC1 = i.reg.rs; //
       _decodedSRC2 = _gpr[i.reg.rt];
+      _regSRC2 = i.reg.rt; //
       _branchOffset = i.imm.imm;
       _writeREG = FALSE;
       _writeFREG = FALSE;
@@ -399,6 +443,7 @@ Mipc::Dec (unsigned int ins)
       _opControl = func_lb;
       _memOp = mem_lb;
       _decodedSRC1 = _gpr[i.reg.rs];
+      _regSRC1 = i.reg.rs; //
       _decodedSRC2 = i.imm.imm;
       _decodedDST = i.reg.rt;
       _writeREG = TRUE;
@@ -412,6 +457,7 @@ Mipc::Dec (unsigned int ins)
       _opControl = func_lbu;
       _memOp = mem_lbu;
       _decodedSRC1 = _gpr[i.reg.rs];
+      _regSRC1 = i.reg.rs; //
       _decodedSRC2 = i.imm.imm;
       _decodedDST = i.reg.rt;
       _writeREG = TRUE;
@@ -425,6 +471,7 @@ Mipc::Dec (unsigned int ins)
       _opControl = func_lh;
       _memOp = mem_lh;
       _decodedSRC1 = _gpr[i.reg.rs];
+      _regSRC1 = i.reg.rs; //
       _decodedSRC2 = i.imm.imm;
       _decodedDST = i.reg.rt;
       _writeREG = TRUE;
@@ -438,6 +485,7 @@ Mipc::Dec (unsigned int ins)
       _opControl = func_lhu;
       _memOp = mem_lhu;
       _decodedSRC1 = _gpr[i.reg.rs];
+      _regSRC1 = i.reg.rs; //
       _decodedSRC2 = i.imm.imm;
       _decodedDST = i.reg.rt;
       _writeREG = TRUE;
@@ -451,6 +499,7 @@ Mipc::Dec (unsigned int ins)
       _opControl = func_lwl;
       _memOp = mem_lwl;
       _decodedSRC1 = _gpr[i.reg.rs];
+      _regSRC1 = i.reg.rs; //
       _decodedSRC2 = i.imm.imm;
       _subregOperand = _gpr[i.reg.rt];
       _decodedDST = i.reg.rt;
@@ -465,6 +514,7 @@ Mipc::Dec (unsigned int ins)
       _opControl = func_lw;
       _memOp = mem_lw;
       _decodedSRC1 = _gpr[i.reg.rs];
+      _regSRC1 = i.reg.rs; //
       _decodedSRC2 = i.imm.imm;
       _decodedDST = i.reg.rt;
       _writeREG = TRUE;
@@ -478,6 +528,7 @@ Mipc::Dec (unsigned int ins)
       _opControl = func_lwr;
       _memOp = mem_lwr;
       _decodedSRC1 = _gpr[i.reg.rs];
+      _regSRC1 = i.reg.rs; //
       _decodedSRC2 = i.imm.imm;
       _subregOperand = _gpr[i.reg.rt];
       _decodedDST = i.reg.rt;
@@ -492,6 +543,7 @@ Mipc::Dec (unsigned int ins)
       _opControl = func_lwc1;
       _memOp = mem_lwc1;
       _decodedSRC1 = _gpr[i.reg.rs];
+      _regSRC1 = i.reg.rs; //
       _decodedSRC2 = i.imm.imm;
       _decodedDST = i.reg.rt;
       _writeREG = FALSE;
@@ -505,6 +557,7 @@ Mipc::Dec (unsigned int ins)
       _opControl = func_swc1;
       _memOp = mem_swc1;
       _decodedSRC1 = _gpr[i.reg.rs];
+      _regSRC1 = i.reg.rs; //
       _decodedSRC2 = i.imm.imm;
       _decodedDST = i.reg.rt;
       _writeREG = FALSE;
@@ -518,6 +571,7 @@ Mipc::Dec (unsigned int ins)
       _opControl = func_sb;
       _memOp = mem_sb;
       _decodedSRC1 = _gpr[i.reg.rs];
+      _regSRC1 = i.reg.rs; //
       _decodedSRC2 = i.imm.imm;
       _decodedDST = i.reg.rt;
       _writeREG = FALSE;
@@ -531,6 +585,7 @@ Mipc::Dec (unsigned int ins)
       _opControl = func_sh;
       _memOp = mem_sh;
       _decodedSRC1 = _gpr[i.reg.rs];
+      _regSRC1 = i.reg.rs; //
       _decodedSRC2 = i.imm.imm;
       _decodedDST = i.reg.rt;
       _writeREG = FALSE;
@@ -544,6 +599,7 @@ Mipc::Dec (unsigned int ins)
       _opControl = func_swl;
       _memOp = mem_swl;
       _decodedSRC1 = _gpr[i.reg.rs];
+      _regSRC1 = i.reg.rs; //
       _decodedSRC2 = i.imm.imm;
       _decodedDST = i.reg.rt;
       _writeREG = FALSE;
@@ -557,6 +613,7 @@ Mipc::Dec (unsigned int ins)
       _opControl = func_sw;
       _memOp = mem_sw;
       _decodedSRC1 = _gpr[i.reg.rs];
+      _regSRC1 = i.reg.rs; //
       _decodedSRC2 = i.imm.imm;
       _decodedDST = i.reg.rt;
       _writeREG = FALSE;
@@ -570,6 +627,7 @@ Mipc::Dec (unsigned int ins)
       _opControl = func_swr;
       _memOp = mem_swr;
       _decodedSRC1 = _gpr[i.reg.rs];
+      _regSRC1 = i.reg.rs; //
       _decodedSRC2 = i.imm.imm;
       _decodedDST = i.reg.rt;
       _writeREG = FALSE;
@@ -585,6 +643,7 @@ Mipc::Dec (unsigned int ins)
       case 4:			// mtc1
          _opControl = func_mtc1;
          _decodedSRC1 = _gpr[i.freg.ft];
+         _regSRC1 = i.freg.ft; //
          _decodedDST = i.freg.fs;
          _writeREG = FALSE;
          _writeFREG = TRUE;
@@ -596,8 +655,10 @@ Mipc::Dec (unsigned int ins)
       case 0:			// mfc1
          _opControl = func_mfc1;
          _decodedSRC1 = _fpr[(i.freg.fs)>>1].l[FP_TWIDDLE^((i.freg.fs)&1)];
+         _regSRC1 = i.freg.fs; //
          _decodedDST = i.freg.ft;
          _writeREG = TRUE;
+         _hasFPSRC = TRUE;
          _writeFREG = FALSE;
          _hiWPort = FALSE;
          _loWPort = FALSE;
@@ -622,10 +683,24 @@ Mipc::Dec (unsigned int ins)
       _memControl = FALSE;
       break;
    }
-   _if_id_r._pc = _pc;
-   _if_id_r._ins = _ins;
+   // #ifdef MIPC_DEBUG
+   //    fprintf(_debugLog, 
+   //          "<%llu> Exec Helper1 ins %#x, pc %#x, dSRC1: %d, regSRC1: %d, dSRC2: %d, regSRC2: %d, dDST: %d, writeREG: %d, writeFREG: %d, hiWPort: %d, loWPort: %d, memControl: %d, decodedShiftAmt: %d, btgt: %u, btaken: %d, bdslot: %d, isSyscall: %d, isIllegalOp: %d, branchOffset: %d, opControl: %p, memOp: %p, opResultHi: %u, opResultLo: %u, hasFPSRC: %d\n", 
+   //          SIM_TIME, _if_id_r._ins, _if_id_r._pc,
+   //          _if_id_r._decodedSRC1, _if_id_r._regSRC1, _if_id_r._decodedSRC2, _if_id_r._regSRC2, 
+   //          _if_id_r._decodedDST, _if_id_r._writeREG, _if_id_r._writeFREG, 
+   //          _if_id_r._hiWPort, _if_id_r._loWPort, _if_id_r._memControl, 
+   //          _if_id_r._decodedShiftAmt, _if_id_r._btgt, _if_id_r._btaken, 
+   //          _if_id_r._bdslot, _if_id_r._isSyscall, _if_id_r._isIllegalOp, 
+   //          _if_id_r._branchOffset, _if_id_r._opControl, _if_id_r._memOp, 
+   //          _if_id_r._opResultHi, _if_id_r._opResultLo, _if_id_r._hasFPSRC);
+   // #endif
+   // _if_id_r._pc = _pc;
+   // _if_id_r._ins = ins;
    _if_id_r._decodedSRC1 = _decodedSRC1;
+   _if_id_r._regSRC1 = _regSRC1;
    _if_id_r._decodedSRC2 = _decodedSRC2;
+   _if_id_r._regSRC2 = _regSRC2;
    _if_id_r._decodedDST = _decodedDST;
    _if_id_r._writeREG = _writeREG;
    _if_id_r._writeFREG = _writeFREG;
@@ -634,12 +709,30 @@ Mipc::Dec (unsigned int ins)
    _if_id_r._memControl = _memControl;
    _if_id_r._decodedShiftAmt = _decodedShiftAmt;
    _if_id_r._btgt = _btgt;
+   _if_id_r._btaken = _btaken;
    _if_id_r._bdslot = _bdslot;
    _if_id_r._isSyscall = _isSyscall;
    _if_id_r._isIllegalOp = _isIllegalOp;
    _if_id_r._branchOffset = _branchOffset;
    _if_id_r._opControl = _opControl;
    _if_id_r._memOp = _memOp;
+   _if_id_r._opResultHi = _opResultHi;
+   _if_id_r._opResultLo = _opResultLo;
+   _if_id_r._hasFPSRC = _hasFPSRC;
+
+   #ifdef MIPC_DEBUG
+      fprintf(_debugLog, 
+            "<%llu> Exec Helper2 ins %#x, pc %#x, dSRC1: %d, regSRC1: %d, dSRC2: %d, regSRC2: %d, dDST: %d, writeREG: %d, writeFREG: %d, hiWPort: %d, loWPort: %d, memControl: %d, decodedShiftAmt: %d, btgt: %u, btaken: %d, bdslot: %d, isSyscall: %d, isIllegalOp: %d, branchOffset: %d, opControl: %p, memOp: %p, opResultHi: %u, opResultLo: %u, hasFPSRC: %d\n", 
+            SIM_TIME, _if_id_r._ins, _if_id_r._pc,
+            _if_id_r._decodedSRC1, _if_id_r._regSRC1, _if_id_r._decodedSRC2, _if_id_r._regSRC2, 
+            _if_id_r._decodedDST, _if_id_r._writeREG, _if_id_r._writeFREG, 
+            _if_id_r._hiWPort, _if_id_r._loWPort, _if_id_r._memControl, 
+            _if_id_r._decodedShiftAmt, _if_id_r._btgt, _if_id_r._btaken, 
+            _if_id_r._bdslot, _if_id_r._isSyscall, _if_id_r._isIllegalOp, 
+            _if_id_r._branchOffset, _if_id_r._opControl, _if_id_r._memOp, 
+            _if_id_r._opResultHi, _if_id_r._opResultLo, _if_id_r._hasFPSRC);
+   #endif
+
 }
 
 
@@ -667,7 +760,7 @@ Mipc::dumpregs (void)
 void
 Mipc::func_add_addu (Mipc *mc, unsigned ins)
 {
-   mc->_opResultLo = (unsigned)((unsigned)mc->_decodedSRC1 + (unsigned)mc->_decodedSRC2);
+   mc->_id_ex_r._opResultLo = (unsigned)((unsigned)mc->_id_ex_r._decodedSRC1 + (unsigned)mc->_id_ex_r._decodedSRC2);
    // printf("Encountered unimplemented instruction: add or addu.\n");
    // printf("You need to fill in func_add_addu in exec_helper.cc to proceed forward.\n");
    // exit(0);
@@ -676,31 +769,31 @@ Mipc::func_add_addu (Mipc *mc, unsigned ins)
 void
 Mipc::func_and (Mipc *mc, unsigned ins)
 {
-   mc->_opResultLo = mc->_decodedSRC1 & mc->_decodedSRC2;
+   mc->_id_ex_r._opResultLo = mc->_id_ex_r._decodedSRC1 & mc->_id_ex_r._decodedSRC2;
 }
 
 void
 Mipc::func_nor (Mipc *mc, unsigned ins)
 {
-   mc->_opResultLo = ~(mc->_decodedSRC1 | mc->_decodedSRC2);
+   mc->_id_ex_r._opResultLo = ~(mc->_id_ex_r._decodedSRC1 | mc->_id_ex_r._decodedSRC2);
 }
 
 void
 Mipc::func_or (Mipc *mc, unsigned ins)
 {
-   mc->_opResultLo = mc->_decodedSRC1 | mc->_decodedSRC2;
+   mc->_id_ex_r._opResultLo = mc->_id_ex_r._decodedSRC1 | mc->_id_ex_r._decodedSRC2;
 }
 
 void
 Mipc::func_sll (Mipc *mc, unsigned ins)
 {
-   mc->_opResultLo = mc->_decodedSRC2 << mc->_decodedShiftAmt;
+   mc->_id_ex_r._opResultLo = mc->_id_ex_r._decodedSRC2 << mc->_id_ex_r._decodedShiftAmt;
 }
 
 void
 Mipc::func_sllv (Mipc *mc, unsigned ins)
 {
-   mc->_opResultLo = mc->_decodedSRC2 << (mc->_decodedSRC1 & 0x1f);
+   mc->_id_ex_r._opResultLo = mc->_id_ex_r._decodedSRC2 << (mc->_id_ex_r._decodedSRC1 & 0x1f);
    // printf("Encountered unimplemented instruction: sllv.\n");
    // printf("You need to fill in func_sllv in exec_helper.cc to proceed forward.\n");
    // exit(0);
@@ -709,109 +802,109 @@ Mipc::func_sllv (Mipc *mc, unsigned ins)
 void
 Mipc::func_slt (Mipc *mc, unsigned ins)
 {
-   if (mc->_decodedSRC1 < mc->_decodedSRC2) {
-      mc->_opResultLo = 1;
+   if (mc->_id_ex_r._decodedSRC1 < mc->_id_ex_r._decodedSRC2) {
+      mc->_id_ex_r._opResultLo = 1;
    }
    else {
-      mc->_opResultLo = 0;
+      mc->_id_ex_r._opResultLo = 0;
    }
 }
 
 void
 Mipc::func_sltu (Mipc *mc, unsigned ins)
 {
-   if ((unsigned)mc->_decodedSRC1 < (unsigned)mc->_decodedSRC2) {
-      mc->_opResultLo = 1;
+   if ((unsigned)mc->_id_ex_r._decodedSRC1 < (unsigned)mc->_id_ex_r._decodedSRC2) {
+      mc->_id_ex_r._opResultLo = 1;
    }
    else {
-      mc->_opResultLo = 0;
+      mc->_id_ex_r._opResultLo = 0;
    }
 }
 
 void
 Mipc::func_sra (Mipc *mc, unsigned ins)
 {
-   mc->_opResultLo = mc->_decodedSRC2 >> mc->_decodedShiftAmt;
+   mc->_id_ex_r._opResultLo = mc->_id_ex_r._decodedSRC2 >> mc->_id_ex_r._decodedShiftAmt;
 }
 
 void
 Mipc::func_srav (Mipc *mc, unsigned ins)
 {
-   mc->_opResultLo = mc->_decodedSRC2 >> (mc->_decodedSRC1 & 0x1f);
+   mc->_id_ex_r._opResultLo = mc->_id_ex_r._decodedSRC2 >> (mc->_id_ex_r._decodedSRC1 & 0x1f);
 }
 
 void
 Mipc::func_srl (Mipc *mc, unsigned ins)
 {
-   mc->_opResultLo = (unsigned)mc->_decodedSRC2 >> mc->_decodedShiftAmt;
+   mc->_id_ex_r._opResultLo = (unsigned)mc->_id_ex_r._decodedSRC2 >> mc->_id_ex_r._decodedShiftAmt;
 }
 
 void
 Mipc::func_srlv (Mipc *mc, unsigned ins)
 {
-   mc->_opResultLo = (unsigned)mc->_decodedSRC2 >> (mc->_decodedSRC1 & 0x1f);
+   mc->_id_ex_r._opResultLo = (unsigned)mc->_id_ex_r._decodedSRC2 >> (mc->_id_ex_r._decodedSRC1 & 0x1f);
 }
 
 void
 Mipc::func_sub_subu (Mipc *mc, unsigned ins)
 {
-   mc->_opResultLo = (unsigned)mc->_decodedSRC1 - (unsigned)mc->_decodedSRC2;
+   mc->_id_ex_r._opResultLo = (unsigned)mc->_id_ex_r._decodedSRC1 - (unsigned)mc->_id_ex_r._decodedSRC2;
 }
 
 void
 Mipc::func_xor (Mipc *mc, unsigned ins)
 {
-   mc->_opResultLo = mc->_decodedSRC1 ^ mc->_decodedSRC2;
+   mc->_id_ex_r._opResultLo = mc->_id_ex_r._decodedSRC1 ^ mc->_id_ex_r._decodedSRC2;
 }
 
 void
 Mipc::func_div (Mipc *mc, unsigned ins)
 {
-   if (mc->_decodedSRC2 != 0) {
-      mc->_opResultHi = (unsigned)(mc->_decodedSRC1 % mc->_decodedSRC2);
-      mc->_opResultLo = (unsigned)(mc->_decodedSRC1 / mc->_decodedSRC2);
+   if (mc->_id_ex_r._decodedSRC2 != 0) {
+      mc->_id_ex_r._opResultHi = (unsigned)(mc->_id_ex_r._decodedSRC1 % mc->_id_ex_r._decodedSRC2);
+      mc->_id_ex_r._opResultLo = (unsigned)(mc->_id_ex_r._decodedSRC1 / mc->_id_ex_r._decodedSRC2);
    }
    else {
-      mc->_opResultHi = 0x7fffffff;
-      mc->_opResultLo = 0x7fffffff;
+      mc->_id_ex_r._opResultHi = 0x7fffffff;
+      mc->_id_ex_r._opResultLo = 0x7fffffff;
    }
 }
 
 void
 Mipc::func_divu (Mipc *mc, unsigned ins)
 {
-   if ((unsigned)mc->_decodedSRC2 != 0) {
-      mc->_opResultHi = (unsigned)(mc->_decodedSRC1) % (unsigned)(mc->_decodedSRC2);
-      mc->_opResultLo = (unsigned)(mc->_decodedSRC1) / (unsigned)(mc->_decodedSRC2);
+   if ((unsigned)mc->_id_ex_r._decodedSRC2 != 0) {
+      mc->_id_ex_r._opResultHi = (unsigned)(mc->_id_ex_r._decodedSRC1) % (unsigned)(mc->_id_ex_r._decodedSRC2);
+      mc->_id_ex_r._opResultLo = (unsigned)(mc->_id_ex_r._decodedSRC1) / (unsigned)(mc->_id_ex_r._decodedSRC2);
    }
    else {
-      mc->_opResultHi = 0x7fffffff;
-      mc->_opResultLo = 0x7fffffff;
+      mc->_id_ex_r._opResultHi = 0x7fffffff;
+      mc->_id_ex_r._opResultLo = 0x7fffffff;
    }
 }
 
 void
 Mipc::func_mfhi (Mipc *mc, unsigned ins)
 {
-   mc->_opResultLo = mc->_hi;
+   mc->_id_ex_r._opResultLo = mc->_hi;
 }
 
 void
 Mipc::func_mflo (Mipc *mc, unsigned ins)
 {
-   mc->_opResultLo = mc->_lo;
+   mc->_id_ex_r._opResultLo = mc->_lo;
 }
 
 void
 Mipc::func_mthi (Mipc *mc, unsigned ins)
 {
-   mc->_opResultHi = mc->_decodedSRC1;
+   mc->_id_ex_r._opResultHi = mc->_id_ex_r._decodedSRC1;
 }
 
 void
 Mipc::func_mtlo (Mipc *mc, unsigned ins)
 {
-   mc->_opResultLo = mc->_decodedSRC1;
+   mc->_id_ex_r._opResultLo = mc->_id_ex_r._decodedSRC1;
 }
 
 void
@@ -819,8 +912,8 @@ Mipc::func_mult (Mipc *mc, unsigned ins)
 {
    unsigned int ar1, ar2, s1, s2, r1, r2, t1, t2;
                                                                                 
-   ar1 = mc->_decodedSRC1;
-   ar2 = mc->_decodedSRC2;
+   ar1 = mc->_id_ex_r._decodedSRC1;
+   ar2 = mc->_id_ex_r._decodedSRC2;
    s1 = ar1 >> 31; if (s1) ar1 = 0x7fffffff & (~ar1 + 1);
    s2 = ar2 >> 31; if (s2) ar2 = 0x7fffffff & (~ar2 + 1);
                                                                                 
@@ -842,8 +935,8 @@ Mipc::func_mult (Mipc *mc, unsigned ins)
       if (r1 == 0)
          r2++;
    }
-   mc->_opResultHi = r2;
-   mc->_opResultLo = r1;
+   mc->_id_ex_r._opResultHi = r2;
+   mc->_id_ex_r._opResultLo = r1;
 }
 
 void
@@ -851,8 +944,8 @@ Mipc::func_multu (Mipc *mc, unsigned ins)
 {
    unsigned int ar1, ar2, s1, s2, r1, r2, t1, t2;
                                                                                 
-   ar1 = mc->_decodedSRC1;
-   ar2 = mc->_decodedSRC2;
+   ar1 = mc->_id_ex_r._decodedSRC1;
+   ar2 = mc->_id_ex_r._decodedSRC2;
                                                                                 
    t1 = (ar1 & 0xffff) * (ar2 & 0xffff);
    r1 = t1 & 0xffff;              // bottom 16 bits
@@ -865,23 +958,25 @@ Mipc::func_multu (Mipc *mc, unsigned ins)
    r2 = (ar1 >> 16) * (ar2 >> 16) + (t1 >> 16) + (t2 >> 16) +
             (((t1 & 0xffff) + (t2 & 0xffff)) >> 16);
                             
-   mc->_opResultHi = r2;
-   mc->_opResultLo = r1;                                                    
+   mc->_id_ex_r._opResultHi = r2;
+   mc->_id_ex_r._opResultLo = r1;                                                    
 }
 
 void
 Mipc::func_jalr (Mipc *mc, unsigned ins)
 {
-   mc->_btaken = 1;
+   mc->_id_ex_r._btaken = 1;
    mc->_num_jal++;
-   mc->_opResultLo = mc->_pc + 8;
+   // mc->_id_ex_r._btgt = mc->_id_ex_r._decodedSRC1;
+   mc->_id_ex_r._opResultLo = mc->_id_ex_r._pc + 8;
 }
 
 void
 Mipc::func_jr (Mipc *mc, unsigned ins)
 {
-   mc->_btaken = 1;
+   mc->_id_ex_r._btaken = 1;
    mc->_num_jr++;
+   // mc->_id_ex_r._btgt = mc->_id_ex_r._decodedSRC1;
 }
 
 void
@@ -898,8 +993,8 @@ Mipc::func_syscall (Mipc *mc, unsigned ins)
 void
 Mipc::func_addi_addiu (Mipc *mc, unsigned ins)
 {
-   SIGN_EXTEND_IMM(mc->_decodedSRC2);
-   mc->_opResultLo = (unsigned)((unsigned)mc->_decodedSRC1 +  (unsigned)mc->_decodedSRC2);
+   SIGN_EXTEND_IMM(mc->_id_ex_r._decodedSRC2);
+   mc->_id_ex_r._opResultLo = (unsigned)((unsigned)mc->_id_ex_r._decodedSRC1 +  (unsigned)mc->_id_ex_r._decodedSRC2);
    // printf("Encountered unimplemented instruction: addi or addiu.\n");
    // printf("You need to fill in func_addi_addiu in exec_helper.cc to proceed forward.\n");
    // exit(0);
@@ -908,13 +1003,13 @@ Mipc::func_addi_addiu (Mipc *mc, unsigned ins)
 void
 Mipc::func_andi (Mipc *mc, unsigned ins)
 {
-   mc->_opResultLo = mc->_decodedSRC1 & mc->_decodedSRC2;
+   mc->_id_ex_r._opResultLo = mc->_id_ex_r._decodedSRC1 & mc->_id_ex_r._decodedSRC2;
 }
 
 void
 Mipc::func_lui (Mipc *mc, unsigned ins)
 {
-   mc->_opResultLo = (unsigned)mc->_decodedSRC2 << 16;
+   mc->_id_ex_r._opResultLo = (unsigned)mc->_id_ex_r._decodedSRC2 << 16;
    // printf("Encountered unimplemented instruction: lui.\n");
    // printf("You need to fill in func_lui in exec_helper.cc to proceed forward.\n");
    // exit(0);
@@ -923,7 +1018,7 @@ Mipc::func_lui (Mipc *mc, unsigned ins)
 void
 Mipc::func_ori (Mipc *mc, unsigned ins)
 {
-   mc->_opResultLo = (unsigned)mc->_decodedSRC1 | (unsigned)mc->_decodedSRC2;
+   mc->_id_ex_r._opResultLo = (unsigned)mc->_id_ex_r._decodedSRC1 | (unsigned)mc->_id_ex_r._decodedSRC2;
    // printf("Encountered unimplemented instruction: ori.\n");
    // printf("You need to fill in func_ori in exec_helper.cc to proceed forward.\n");
    // exit(0);
@@ -932,38 +1027,38 @@ Mipc::func_ori (Mipc *mc, unsigned ins)
 void
 Mipc::func_slti (Mipc *mc, unsigned ins)
 {
-   SIGN_EXTEND_IMM(mc->_decodedSRC2);
-   if (mc->_decodedSRC1 < mc->_decodedSRC2) {
-      mc->_opResultLo = 1;
+   SIGN_EXTEND_IMM(mc->_id_ex_r._decodedSRC2);
+   if (mc->_id_ex_r._decodedSRC1 < mc->_id_ex_r._decodedSRC2) {
+      mc->_id_ex_r._opResultLo = 1;
    }
    else {
-      mc->_opResultLo = 0;
+      mc->_id_ex_r._opResultLo = 0;
    }
 }
 
 void
 Mipc::func_sltiu (Mipc *mc, unsigned ins)
 {
-   SIGN_EXTEND_IMM(mc->_decodedSRC2);
-   if ((unsigned)mc->_decodedSRC1 < (unsigned)mc->_decodedSRC2) {
-      mc->_opResultLo = 1;
+   SIGN_EXTEND_IMM(mc->_id_ex_r._decodedSRC2);
+   if ((unsigned)mc->_id_ex_r._decodedSRC1 < (unsigned)mc->_id_ex_r._decodedSRC2) {
+      mc->_id_ex_r._opResultLo = 1;
    }
    else {
-      mc->_opResultLo = 0;
+      mc->_id_ex_r._opResultLo = 0;
    }
 }
 
 void
 Mipc::func_xori (Mipc *mc, unsigned ins)
 {
-   mc->_opResultLo = mc->_decodedSRC1 ^ mc->_decodedSRC2;
+   mc->_id_ex_r._opResultLo = mc->_id_ex_r._decodedSRC1 ^ mc->_id_ex_r._decodedSRC2;
 }
 
 void
 Mipc::func_beq (Mipc *mc, unsigned ins)
 {
    mc->_num_cond_br++;
-   mc->_btaken = (mc->_decodedSRC1 == mc->_decodedSRC2) ? 1 : 0;
+   mc->_id_ex_r._btaken = (mc->_id_ex_r._decodedSRC1 == mc->_id_ex_r._decodedSRC2) ? 1 : 0;
    // printf("Encountered unimplemented instruction: beq.\n");
    // printf("You need to fill in func_beq in exec_helper.cc to proceed forward.\n");
    // exit(0);
@@ -973,65 +1068,65 @@ void
 Mipc::func_bgez (Mipc *mc, unsigned ins)
 {
    mc->_num_cond_br++;
-   mc->_btaken = !(mc->_decodedSRC1 >> 31);
+   mc->_id_ex_r._btaken = !(mc->_id_ex_r._decodedSRC1 >> 31);
 }
 
 void
 Mipc::func_bgezal (Mipc *mc, unsigned ins)
 {
    mc->_num_cond_br++;
-   mc->_btaken = !(mc->_decodedSRC1 >> 31);
-   mc->_opResultLo = mc->_pc + 8;
+   mc->_id_ex_r._btaken = !(mc->_id_ex_r._decodedSRC1 >> 31);
+   mc->_id_ex_r._opResultLo = mc->_id_ex_r._pc + 8;
 }
 
 void
 Mipc::func_bltzal (Mipc *mc, unsigned ins)
 {
    mc->_num_cond_br++;
-   mc->_btaken = (mc->_decodedSRC1 >> 31);
-   mc->_opResultLo = mc->_pc + 8;
+   mc->_id_ex_r._btaken = (mc->_id_ex_r._decodedSRC1 >> 31);
+   mc->_id_ex_r._opResultLo = mc->_id_ex_r._pc + 8;
 }
 
 void
 Mipc::func_bltz (Mipc *mc, unsigned ins)
 {
    mc->_num_cond_br++;
-   mc->_btaken = (mc->_decodedSRC1 >> 31);
+   mc->_id_ex_r._btaken = (mc->_id_ex_r._decodedSRC1 >> 31);
 }
 
 void
 Mipc::func_bgtz (Mipc *mc, unsigned ins)
 {
    mc->_num_cond_br++;
-   mc->_btaken = (mc->_decodedSRC1 > 0);
+   mc->_id_ex_r._btaken = (mc->_id_ex_r._decodedSRC1 > 0);
 }
 
 void
 Mipc::func_blez (Mipc *mc, unsigned ins)
 {
    mc->_num_cond_br++;
-   mc->_btaken = (mc->_decodedSRC1 <= 0);
+   mc->_id_ex_r._btaken = (mc->_id_ex_r._decodedSRC1 <= 0);
 }
 
 void
 Mipc::func_bne (Mipc *mc, unsigned ins)
 {
    mc->_num_cond_br++;
-   mc->_btaken = (mc->_decodedSRC1 != mc->_decodedSRC2);
+   mc->_id_ex_r._btaken = (mc->_id_ex_r._decodedSRC1 != mc->_id_ex_r._decodedSRC2);
 }
 
 void
 Mipc::func_j (Mipc *mc, unsigned ins)
 {
-   mc->_btaken = 1;
+   mc->_id_ex_r._btaken = 1;
 }
 
 void
 Mipc::func_jal (Mipc *mc, unsigned ins)
 {
    mc->_num_jal++;
-   mc->_btaken = 1;
-   mc->_opResultLo = mc->_pc + 8;
+   mc->_id_ex_r._btaken = 1;
+   mc->_id_ex_r._opResultLo = mc->_id_ex_r._pc + 8;
    // printf("Encountered unimplemented instruction: jal.\n");
    // printf("You need to fill in func_jal in exec_helper.cc to proceed forward.\n");
    // exit(0);
@@ -1043,16 +1138,16 @@ Mipc::func_lb (Mipc *mc, unsigned ins)
    signed int a1;
 
    mc->_num_load++;
-   SIGN_EXTEND_IMM(mc->_decodedSRC2);
-   mc->_memory_addr_reg = (unsigned)(mc->_decodedSRC1+mc->_decodedSRC2);
+   SIGN_EXTEND_IMM(mc->_id_ex_r._decodedSRC2);
+   mc->_id_ex_r._mem_addr_reg = (unsigned)(mc->_id_ex_r._decodedSRC1+mc->_id_ex_r._decodedSRC2);
 }
 
 void
 Mipc::func_lbu (Mipc *mc, unsigned ins)
 {
    mc->_num_load++;
-   SIGN_EXTEND_IMM(mc->_decodedSRC2);
-   mc->_memory_addr_reg = (unsigned)(mc->_decodedSRC1+mc->_decodedSRC2);
+   SIGN_EXTEND_IMM(mc->_id_ex_r._decodedSRC2);
+   mc->_id_ex_r._mem_addr_reg = (unsigned)(mc->_id_ex_r._decodedSRC1+mc->_id_ex_r._decodedSRC2);
 }
 
 void
@@ -1061,16 +1156,16 @@ Mipc::func_lh (Mipc *mc, unsigned ins)
    signed int a1;
                                                                                 
    mc->_num_load++;
-   SIGN_EXTEND_IMM(mc->_decodedSRC2);
-   mc->_memory_addr_reg = (unsigned)(mc->_decodedSRC1+mc->_decodedSRC2);
+   SIGN_EXTEND_IMM(mc->_id_ex_r._decodedSRC2);
+   mc->_id_ex_r._mem_addr_reg = (unsigned)(mc->_id_ex_r._decodedSRC1+mc->_id_ex_r._decodedSRC2);
 }
 
 void
 Mipc::func_lhu (Mipc *mc, unsigned ins)
 {
    mc->_num_load++;
-   SIGN_EXTEND_IMM(mc->_decodedSRC2);
-   mc->_memory_addr_reg = (unsigned)(mc->_decodedSRC1+mc->_decodedSRC2);
+   SIGN_EXTEND_IMM(mc->_id_ex_r._decodedSRC2);
+   mc->_id_ex_r._mem_addr_reg = (unsigned)(mc->_id_ex_r._decodedSRC1+mc->_id_ex_r._decodedSRC2);
 }
 
 void
@@ -1080,16 +1175,16 @@ Mipc::func_lwl (Mipc *mc, unsigned ins)
    unsigned s1;
                                                                                 
    mc->_num_load++;
-   SIGN_EXTEND_IMM(mc->_decodedSRC2);
-   mc->_memory_addr_reg = (unsigned)(mc->_decodedSRC1+mc->_decodedSRC2);
+   SIGN_EXTEND_IMM(mc->_id_ex_r._decodedSRC2);
+   mc->_id_ex_r._mem_addr_reg = (unsigned)(mc->_id_ex_r._decodedSRC1+mc->_id_ex_r._decodedSRC2);
 }
 
 void
 Mipc::func_lw (Mipc *mc, unsigned ins)
 {
    mc->_num_load++;
-   SIGN_EXTEND_IMM(mc->_decodedSRC2);
-   mc->_memory_addr_reg = (unsigned)(mc->_decodedSRC1+mc->_decodedSRC2);
+   SIGN_EXTEND_IMM(mc->_id_ex_r._decodedSRC2);
+   mc->_id_ex_r._mem_addr_reg = (unsigned)(mc->_id_ex_r._decodedSRC1+mc->_id_ex_r._decodedSRC2);
    // printf("Encountered unimplemented instruction: lw.\n");
    // printf("You need to fill in func_lw in exec_helper.cc to proceed forward.\n");
    // exit(0);
@@ -1101,40 +1196,40 @@ Mipc::func_lwr (Mipc *mc, unsigned ins)
    unsigned ar1, s1;
                                                                                 
    mc->_num_load++;
-   SIGN_EXTEND_IMM(mc->_decodedSRC2);
-   mc->_memory_addr_reg = (unsigned)(mc->_decodedSRC1+mc->_decodedSRC2);
+   SIGN_EXTEND_IMM(mc->_id_ex_r._decodedSRC2);
+   mc->_id_ex_r._mem_addr_reg = (unsigned)(mc->_id_ex_r._decodedSRC1+mc->_id_ex_r._decodedSRC2);
 }
 
 void
 Mipc::func_lwc1 (Mipc *mc, unsigned ins)
 {
    mc->_num_load++;
-   SIGN_EXTEND_IMM(mc->_decodedSRC2);
-   mc->_memory_addr_reg = (unsigned)(mc->_decodedSRC1+mc->_decodedSRC2);
+   SIGN_EXTEND_IMM(mc->_id_ex_r._decodedSRC2);
+   mc->_id_ex_r._mem_addr_reg = (unsigned)(mc->_id_ex_r._decodedSRC1+mc->_id_ex_r._decodedSRC2);
 }
 
 void
 Mipc::func_swc1 (Mipc *mc, unsigned ins)
 {
    mc->_num_store++;
-   SIGN_EXTEND_IMM(mc->_decodedSRC2);
-   mc->_memory_addr_reg = (unsigned)(mc->_decodedSRC1+mc->_decodedSRC2);
+   SIGN_EXTEND_IMM(mc->_id_ex_r._decodedSRC2);
+   mc->_id_ex_r._mem_addr_reg = (unsigned)(mc->_id_ex_r._decodedSRC1+mc->_id_ex_r._decodedSRC2);
 }
 
 void
 Mipc::func_sb (Mipc *mc, unsigned ins)
 {
    mc->_num_store++;
-   SIGN_EXTEND_IMM(mc->_decodedSRC2);
-   mc->_memory_addr_reg = (unsigned)(mc->_decodedSRC1+mc->_decodedSRC2);
+   SIGN_EXTEND_IMM(mc->_id_ex_r._decodedSRC2);
+   mc->_id_ex_r._mem_addr_reg = (unsigned)(mc->_id_ex_r._decodedSRC1+mc->_id_ex_r._decodedSRC2);
 }
 
 void
 Mipc::func_sh (Mipc *mc, unsigned ins)
 {
    mc->_num_store++;
-   SIGN_EXTEND_IMM(mc->_decodedSRC2);
-   mc->_memory_addr_reg = (unsigned)(mc->_decodedSRC1+mc->_decodedSRC2);
+   SIGN_EXTEND_IMM(mc->_id_ex_r._decodedSRC2);
+   mc->_id_ex_r._mem_addr_reg = (unsigned)(mc->_id_ex_r._decodedSRC1+mc->_id_ex_r._decodedSRC2);
 }
 
 void
@@ -1143,16 +1238,16 @@ Mipc::func_swl (Mipc *mc, unsigned ins)
    unsigned ar1, s1;
                                                                                 
    mc->_num_store++;
-   SIGN_EXTEND_IMM(mc->_decodedSRC2);
-   mc->_memory_addr_reg = (unsigned)(mc->_decodedSRC1+mc->_decodedSRC2);
+   SIGN_EXTEND_IMM(mc->_id_ex_r._decodedSRC2);
+   mc->_id_ex_r._mem_addr_reg = (unsigned)(mc->_id_ex_r._decodedSRC1+mc->_id_ex_r._decodedSRC2);
 }
 
 void
 Mipc::func_sw (Mipc *mc, unsigned ins)
 {
    mc->_num_store++;
-   SIGN_EXTEND_IMM(mc->_decodedSRC2);
-   mc->_memory_addr_reg = (unsigned)(mc->_decodedSRC1+mc->_decodedSRC2);
+   SIGN_EXTEND_IMM(mc->_id_ex_r._decodedSRC2);
+   mc->_id_ex_r._mem_addr_reg = (unsigned)(mc->_id_ex_r._decodedSRC1+mc->_id_ex_r._decodedSRC2);
 }
 
 void
@@ -1161,20 +1256,20 @@ Mipc::func_swr (Mipc *mc, unsigned ins)
    unsigned ar1, s1;
                                                                                 
    mc->_num_store++;
-   SIGN_EXTEND_IMM(mc->_decodedSRC2);
-   mc->_memory_addr_reg = (unsigned)(mc->_decodedSRC1+mc->_decodedSRC2);
+   SIGN_EXTEND_IMM(mc->_id_ex_r._decodedSRC2);
+   mc->_id_ex_r._mem_addr_reg = (unsigned)(mc->_id_ex_r._decodedSRC1+mc->_id_ex_r._decodedSRC2);
 }
 
 void
 Mipc::func_mtc1 (Mipc *mc, unsigned ins)
 {
-   mc->_opResultLo = mc->_decodedSRC1;
+   mc->_id_ex_r._opResultLo = mc->_id_ex_r._decodedSRC1;
 }
 
 void
 Mipc::func_mfc1 (Mipc *mc, unsigned ins)
 {
-   mc->_opResultLo = mc->_decodedSRC1;
+   mc->_id_ex_r._opResultLo = mc->_id_ex_r._decodedSRC1;
 }
 
 
@@ -1184,15 +1279,15 @@ Mipc::mem_lb (Mipc *mc)
 {
    signed int a1;
 
-   a1 = mc->_mem->BEGetByte(mc->_memory_addr_reg, mc->_mem->Read(mc->_memory_addr_reg & ~(LL)0x7));
+   a1 = mc->_mem->BEGetByte(mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7));
    SIGN_EXTEND_BYTE(a1);
-   mc->_opResultLo = a1;
+   mc->_ex_mem_r._opResultLo = a1;
 }
 
 void
 Mipc::mem_lbu (Mipc *mc)
 {
-   mc->_opResultLo = mc->_mem->BEGetByte(mc->_memory_addr_reg, mc->_mem->Read(mc->_memory_addr_reg & ~(LL)0x7));
+   mc->_ex_mem_r._opResultLo = mc->_mem->BEGetByte(mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7));
 }
 
 void
@@ -1200,15 +1295,15 @@ Mipc::mem_lh (Mipc *mc)
 {
    signed int a1;
 
-   a1 = mc->_mem->BEGetHalfWord(mc->_memory_addr_reg, mc->_mem->Read(mc->_memory_addr_reg & ~(LL)0x7));
+   a1 = mc->_mem->BEGetHalfWord(mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7));
    SIGN_EXTEND_IMM(a1);
-   mc->_opResultLo = a1;
+   mc->_ex_mem_r._opResultLo = a1;
 }
 
 void
 Mipc::mem_lhu (Mipc *mc)
 {
-   mc->_opResultLo = mc->_mem->BEGetHalfWord (mc->_memory_addr_reg, mc->_mem->Read(mc->_memory_addr_reg & ~(LL)0x7));
+   mc->_ex_mem_r._opResultLo = mc->_mem->BEGetHalfWord (mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7));
 }
 
 void
@@ -1217,49 +1312,51 @@ Mipc::mem_lwl (Mipc *mc)
    signed int a1;
    unsigned s1;
 
-   a1 = mc->_mem->BEGetWord (mc->_memory_addr_reg, mc->_mem->Read(mc->_memory_addr_reg & ~(LL)0x7));
-   s1 = (mc->_memory_addr_reg & 3) << 3;
-   mc->_opResultLo = (a1 << s1) | (mc->_subregOperand & ~(~0UL << s1));
+   mc->_ex_mem_r._subregOperand = mc->_gpr[mc->_ex_mem_r._regSRC2];
+   a1 = mc->_mem->BEGetWord (mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7));
+   s1 = (mc->_ex_mem_r._mem_addr_reg & 3) << 3;
+   mc->_ex_mem_r._opResultLo = (a1 << s1) | (mc->_ex_mem_r._subregOperand & ~(~0UL << s1));
 }
 
 void
 Mipc::mem_lw (Mipc *mc)
 {
-   mc->_opResultLo = mc->_mem->BEGetWord (mc->_memory_addr_reg, mc->_mem->Read(mc->_memory_addr_reg & ~(LL)0x7));
+   mc->_ex_mem_r._opResultLo = mc->_mem->BEGetWord (mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7));
 }
 
 void
 Mipc::mem_lwr (Mipc *mc)
 {
    unsigned ar1, s1;
-
-   ar1 = mc->_mem->BEGetWord (mc->_memory_addr_reg, mc->_mem->Read(mc->_memory_addr_reg & ~(LL)0x7));
-   s1 = (~mc->_memory_addr_reg & 3) << 3;
-   mc->_opResultLo = (ar1 >> s1) | (mc->_subregOperand & ~(~(unsigned)0 >> s1));
+   
+   mc->_ex_mem_r._subregOperand = mc->_gpr[mc->_ex_mem_r._regSRC2];
+   ar1 = mc->_mem->BEGetWord (mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7));
+   s1 = (~mc->_ex_mem_r._mem_addr_reg & 3) << 3;
+   mc->_ex_mem_r._opResultLo = (ar1 >> s1) | (mc->_ex_mem_r._subregOperand & ~(~(unsigned)0 >> s1));
 }
 
 void
 Mipc::mem_lwc1 (Mipc *mc)
 {
-   mc->_opResultLo = mc->_mem->BEGetWord (mc->_memory_addr_reg, mc->_mem->Read(mc->_memory_addr_reg & ~(LL)0x7));
+   mc->_ex_mem_r._opResultLo = mc->_mem->BEGetWord (mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7));
 }
 
 void
 Mipc::mem_swc1 (Mipc *mc)
 {
-   mc->_mem->Write(mc->_memory_addr_reg & ~(LL)0x7, mc->_mem->BESetWord (mc->_memory_addr_reg, mc->_mem->Read(mc->_memory_addr_reg & ~(LL)0x7), mc->_fpr[mc->_decodedDST>>1].l[FP_TWIDDLE^(mc->_decodedDST&1)]));
+   mc->_mem->Write(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7, mc->_mem->BESetWord (mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7), mc->_fpr[mc->_ex_mem_r._decodedDST>>1].l[FP_TWIDDLE^(mc->_ex_mem_r._decodedDST&1)]));
 }
 
 void
 Mipc::mem_sb (Mipc *mc)
 {
-   mc->_mem->Write(mc->_memory_addr_reg & ~(LL)0x7, mc->_mem->BESetByte (mc->_memory_addr_reg, mc->_mem->Read(mc->_memory_addr_reg & ~(LL)0x7), mc->_gpr[mc->_decodedDST] & 0xff));
+   mc->_mem->Write(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7, mc->_mem->BESetByte (mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7), mc->_gpr[mc->_ex_mem_r._decodedDST] & 0xff));
 }
 
 void
 Mipc::mem_sh (Mipc *mc)
 {
-   mc->_mem->Write(mc->_memory_addr_reg & ~(LL)0x7, mc->_mem->BESetHalfWord (mc->_memory_addr_reg, mc->_mem->Read(mc->_memory_addr_reg & ~(LL)0x7), mc->_gpr[mc->_decodedDST] & 0xffff));
+   mc->_mem->Write(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7, mc->_mem->BESetHalfWord (mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7), mc->_gpr[mc->_ex_mem_r._decodedDST] & 0xffff));
 }
 
 void
@@ -1267,16 +1364,16 @@ Mipc::mem_swl (Mipc *mc)
 {
    unsigned ar1, s1;
 
-   ar1 = mc->_mem->BEGetWord (mc->_memory_addr_reg, mc->_mem->Read(mc->_memory_addr_reg & ~(LL)0x7));
-   s1 = (mc->_memory_addr_reg & 3) << 3;
-   ar1 = (mc->_gpr[mc->_decodedDST] >> s1) | (ar1 & ~(~(unsigned)0 >> s1));
-   mc->_mem->Write(mc->_memory_addr_reg & ~(LL)0x7, mc->_mem->BESetWord (mc->_memory_addr_reg, mc->_mem->Read(mc->_memory_addr_reg & ~(LL)0x7), ar1));
+   ar1 = mc->_mem->BEGetWord (mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7));
+   s1 = (mc->_ex_mem_r._mem_addr_reg & 3) << 3;
+   ar1 = (mc->_gpr[mc->_ex_mem_r._decodedDST] >> s1) | (ar1 & ~(~(unsigned)0 >> s1));
+   mc->_mem->Write(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7, mc->_mem->BESetWord (mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7), ar1));
 }
 
 void
 Mipc::mem_sw (Mipc *mc)
 {
-   mc->_mem->Write(mc->_memory_addr_reg & ~(LL)0x7, mc->_mem->BESetWord (mc->_memory_addr_reg, mc->_mem->Read(mc->_memory_addr_reg & ~(LL)0x7), mc->_gpr[mc->_decodedDST]));
+   mc->_mem->Write(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7, mc->_mem->BESetWord (mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7), mc->_gpr[mc->_ex_mem_r._decodedDST]));
 }
 
 void
@@ -1284,8 +1381,8 @@ Mipc::mem_swr (Mipc *mc)
 {
    unsigned ar1, s1;
 
-   ar1 = mc->_mem->BEGetWord (mc->_memory_addr_reg, mc->_mem->Read(mc->_memory_addr_reg & ~(LL)0x7));
-   s1 = (~mc->_memory_addr_reg & 3) << 3;
-   ar1 = (mc->_gpr[mc->_decodedDST] << s1) | (ar1 & ~(~0UL << s1));
-   mc->_mem->Write(mc->_memory_addr_reg & ~(LL)0x7, mc->_mem->BESetWord (mc->_memory_addr_reg, mc->_mem->Read(mc->_memory_addr_reg & ~(LL)0x7), ar1));
+   ar1 = mc->_mem->BEGetWord (mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7));
+   s1 = (~mc->_ex_mem_r._mem_addr_reg & 3) << 3;
+   ar1 = (mc->_gpr[mc->_ex_mem_r._decodedDST] << s1) | (ar1 & ~(~0UL << s1));
+   mc->_mem->Write(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7, mc->_mem->BESetWord (mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7), ar1));
 }
