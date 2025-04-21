@@ -35,7 +35,7 @@ Writeback::MainLoop (void)
       isIllegalOp = _mc->_mem_wb_r._isIllegalOp;
       ins = _mc->_mem_wb_r._ins;
          if (isSyscall) {
-#ifdef MIPC_DEBUG
+#if MIPC_DEBUG
             fprintf(_mc->_debugLog, "<%llu> SYSCALL! Trapping to emulation layer at PC %#x\n", SIM_TIME, _mc->_pc);
 #endif      
             _mc->_mem_wb_r._opControl(_mc, ins);
@@ -44,7 +44,7 @@ Writeback::MainLoop (void)
          }
          else if (isIllegalOp) {
             printf("Illegal ins %#x at PC %#x. Terminating simulation!\n", ins, _mc->_pc);
-#ifdef MIPC_DEBUG
+#if MIPC_DEBUG
             fclose(_mc->_debugLog);
 #endif
             printf("Register state on termination:\n\n");
@@ -54,32 +54,32 @@ Writeback::MainLoop (void)
          else {
             if (writeReg) {
                _mc->_gpr[decodedDST] = opResultLo;
-#ifdef MIPC_DEBUG
+#if MIPC_DEBUG
                fprintf(_mc->_debugLog, "<%llu> Writing to reg %u, value: %#x\n", SIM_TIME, decodedDST, opResultLo);
 #endif
             }
             else if (writeFReg) {
                _mc->_fpr[(decodedDST)>>1].l[FP_TWIDDLE^((decodedDST)&1)] = opResultLo;
-#ifdef MIPC_DEBUG
+#if MIPC_DEBUG
                fprintf(_mc->_debugLog, "<%llu> Writing to freg %u, value: %#x\n", SIM_TIME, decodedDST>>1, opResultLo);
 #endif
             }
             else if (loWPort || hiWPort) {
                if (loWPort) {
                   _mc->_lo = opResultLo;
-#ifdef MIPC_DEBUG
+#if MIPC_DEBUG
                   fprintf(_mc->_debugLog, "<%llu> Writing to Lo, value: %#x\n", SIM_TIME, opResultLo);
 #endif
                }
                if (hiWPort) {
                   _mc->_hi = opResultHi;
-#ifdef MIPC_DEBUG
+#if MIPC_DEBUG
                   fprintf(_mc->_debugLog, "<%llu> Writing to Hi, value: %#x\n", SIM_TIME, opResultHi);
 #endif
                }
             }
             else{
-#ifdef MIPC_DEBUG
+#if MIPC_DEBUG
                fprintf(_mc->_debugLog, "<%llu> No writeback for ins %#x\n", SIM_TIME, ins);
 #endif
             }

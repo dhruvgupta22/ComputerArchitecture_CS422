@@ -6,7 +6,7 @@ Mipc::Mipc (Mem *m) : _l('M')
 {
    _mem = m;
    _sys = new MipcSysCall (this);	// Allocate syscall layer
-#ifdef MIPC_DEBUG
+#if MIPC_DEBUG
    _debugLog = fopen("mipc.debug", "w");
    assert(_debugLog != NULL);
 #endif
@@ -37,7 +37,6 @@ void PipeReg::flush_regs(){
    _memControl = FALSE;
    _decodedShiftAmt = 0;
    _btgt = 0;
-   _bdslot = 0;
    _isSyscall = FALSE;
    _isIllegalOp = FALSE;
    _branchOffset = 0;
@@ -50,7 +49,12 @@ void PipeReg::flush_regs(){
    _opResultHi = 0;
    _syscall_present = FALSE;
    _mem_addr_reg = 0;
+   
+   #if BRANCH_INTERLOCK_ENABLED
+   _bdslot = 0;
    _lastbdslot = FALSE;
+   #endif
+
    _btaken = FALSE;
    _regSRC1 = 0;
    _regSRC2 = 0;
@@ -58,6 +62,7 @@ void PipeReg::flush_regs(){
    _loRPort = FALSE;
    _hasFPSRC = FALSE;
    _subregOperand = 0;
+   _data_stall = FALSE;
    
 }
 
@@ -72,7 +77,7 @@ Mipc::MainLoop (void)
     _nfetched = 0;
 
     while (!_sim_exit) {
-         // #ifdef MIPC_DEBUG
+         // #if MIPC_DEBUG
          // fprintf(_debugLog, "<%llu> Fetcher PC enter %#x\n", SIM_TIME, _pc);
          // #endif
         AWAIT_P_PHI0;	// @posedge
@@ -81,33 +86,47 @@ Mipc::MainLoop (void)
         AWAIT_P_PHI1;	// @negedge
         /* Work in negative half cycle */
         if(_syscall_present){
+         #if MIPC_DEBUG
+         fprintf(_debugLog, "<%llu> Fetched PC syscall present %#x\n", SIM_TIME, _pc);
+         #endif
             _if_id_w.flush_regs();
 
         }
-      //   #ifdef BRANCH_INTERLOCK_ENABLED
-      //   #endif
-        else if(_lastbdslot == 1){
-         _if_id_w.flush_regs();
-         _lastbdslot = 0;
+        else if(_data_stall){
+         #if MIPC_DEBUG
+         fprintf(_debugLog, "<%llu> Fetched PC data stall %#x\n", SIM_TIME, _pc);
+         #endif
+         continue;
         }
+        #if BRANCH_INTERLOCK_ENABLED
+         else if(_lastbdslot == 1){
+            #if MIPC_DEBUG
+            fprintf(_debugLog, "<%llu> Fetched lbd %#x\n", SIM_TIME, _pc);
+            #endif
+            _if_id_w.flush_regs();
+            _lastbdslot = 0;
+         }
+        #endif
 
         else{
             addr = _pc;
             ins = _mem->BEGetWord (addr, _mem->Read(addr & ~(LL)0x7));
-            #ifdef MIPC_DEBUG
+            #if MIPC_DEBUG
                     fprintf(_debugLog, "<%llu> Fetched ins %#x from PC %#x addr = %#x\n", SIM_TIME, ins, _pc, addr);
             #endif
             _if_id_w._pc = _pc;
             _if_id_w._ins = ins;
             _nfetched++;
             _pc += 4;
+            #if BRANCH_INTERLOCK_ENABLED
             if(_bdslot){
                _lastbdslot = 1;
                _bdslot = 0;
             }
+            #endif
                 
         }
-      //   #ifdef MIPC_DEBUG
+      //   #if MIPC_DEBUG
       //    fprintf(_debugLog, "<%llu> Fetcher PC %#x\n", SIM_TIME, _pc);
       //    #endif
     }
@@ -115,7 +134,7 @@ Mipc::MainLoop (void)
     MipcDumpstats();
     Log::CloseLog();
    
-#ifdef MIPC_DEBUG
+#if MIPC_DEBUG
     assert(_debugLog != NULL);
     fclose(_debugLog);
 #endif
@@ -193,8 +212,11 @@ Mipc::Reboot (char *image)
       _num_jal = 0;
       _num_jr = 0;
 
+      #if BRANCH_INTERLOCK_ENABLED
       _lastbdslot = 0;
       _bdslot = 0;
+      #endif
+
       _btaken = 0;
       _btgt = 0xdeadbeef;
       _sim_exit = 0;

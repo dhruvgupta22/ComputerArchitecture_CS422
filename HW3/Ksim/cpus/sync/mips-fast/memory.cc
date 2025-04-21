@@ -20,13 +20,13 @@ void Memory::MainLoop(void)
       if (memControl)
       {
          _mc->_ex_mem_r._memOp(_mc);
-#ifdef MIPC_DEBUG
+#if MIPC_DEBUG
          fprintf(_mc->_debugLog, "<%llu> Accessing memory at address %#x for ins %#x\n", SIM_TIME, _mc->_memory_addr_reg, _mc->_ex_mem_r._ins);
 #endif
       }
       else
       {
-#ifdef MIPC_DEBUG
+#if MIPC_DEBUG
          fprintf(_mc->_debugLog, "<%llu> Memory has nothing to do for ins %#x\n", SIM_TIME, _mc->_ex_mem_r._ins);
 #endif
       }

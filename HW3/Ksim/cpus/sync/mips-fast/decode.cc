@@ -27,7 +27,7 @@ bool Decode::checkDataHazard()
    Bool loWPort2 = _mc->_ex_mem_w._loWPort;
    Bool hiWPort2 = _mc->_ex_mem_w._hiWPort;
 
-   #ifdef MIPC_DEBUG
+   #if MIPC_DEBUG
         fprintf(_mc->_debugLog, "<%llu> Checking data hazard src1 = %u, src2 = %u, dst1 = %u, dst2 = %u\n", SIM_TIME, src1, src2, dst1, dst2);
         fprintf(_mc->_debugLog, "<%llu> Checking data hazard writeReg1 = %u, writeReg2 = %u, writeFReg1 = %u, writeFReg2 = %u\n", SIM_TIME, writeReg1, writeReg2, writeFReg1, writeFReg2);
         fprintf(_mc->_debugLog, "<%llu> Checking data hazard loRPort = %u, hiRPort = %u, hasFPSRC = %u\n", SIM_TIME, loRPort, hiRPort, hasFPSRC);
@@ -75,31 +75,31 @@ Decode::MainLoop (void)
         ins = _mc->_if_id_r._ins;
         _mc->Dec(ins);
         bool stall = checkDataHazard();
+        _mc->_data_stall = stall;
 
-
-       if(_mc->_if_id_r._isSyscall) {
-        #ifdef MIPC_DEBUG
+       if(!_mc->_data_stall && _mc->_if_id_r._isSyscall) {
+        #if MIPC_DEBUG
         fprintf(_mc->_debugLog, "<%llu> Decoded syscall ins %#x\n", SIM_TIME, ins);
         #endif
           _mc->_syscall_present = TRUE;
        }
-       if(stall){
-               _mc->_pc = _mc->_if_id_r._pc;
-               #ifdef MIPC_DEBUG
-                     fprintf(_mc->_debugLog, "<%llu> Stall in decoder ins %#x, pc = %#x,\n", SIM_TIME, ins, _mc->_pc);
-             #endif
-       }
+//        if(stall){
+//                _mc->_pc = _mc->_if_id_r._pc;
+//                #if MIPC_DEBUG
+//                      fprintf(_mc->_debugLog, "<%llu> Stall in decoder ins %#x, pc = %#x,\n", SIM_TIME, ins, _mc->_pc);
+//              #endif
+//        }
         AWAIT_P_PHI1;	// @negedge    
         if(stall){
            _mc->_id_ex_w.flush_regs();
-           #ifdef MIPC_DEBUG
+           #if MIPC_DEBUG
                    fprintf(_mc->_debugLog, "<%llu> Decoded ins %#x, Flushed \n", SIM_TIME, ins);
            #endif
         }
         else{
            _mc->Dec(ins);
-           #ifdef MIPC_DEBUG
-                   fprintf(_mc->_debugLog, "<%llu> Decoded ins %#x, bdslot = %u\n", SIM_TIME, ins, _mc->_if_id_r._bdslot);
+           #if MIPC_DEBUG
+                   fprintf(_mc->_debugLog, "<%llu> Decoded ins %#x\n", SIM_TIME, ins);
            #endif
            _mc->_id_ex_w = _mc->_if_id_r;
         }

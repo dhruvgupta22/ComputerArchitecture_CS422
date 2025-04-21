@@ -25,29 +25,29 @@ Exe::MainLoop (void)
             if(_mc->_id_ex_r._opControl != NULL){
                _mc->_id_ex_r._opControl(_mc,ins);
             }
-#ifdef MIPC_DEBUG
+#if MIPC_DEBUG
             fprintf(_mc->_debugLog, "<%llu> Executed ins %#x\n", SIM_TIME, ins);
 #endif
          }
          else if (isSyscall) {
-#ifdef MIPC_DEBUG
+#if MIPC_DEBUG
             fprintf(_mc->_debugLog, "<%llu> Deferring execution of syscall ins %#x\n", SIM_TIME, ins);
 #endif
          }
          else {
-#ifdef MIPC_DEBUG
+#if MIPC_DEBUG
             fprintf(_mc->_debugLog, "<%llu> Illegal ins %#x in execution stage at PC %#x\n", SIM_TIME, ins, _mc->_pc);
 #endif
          }
 
-         #ifdef MIPC_DEBUG
-         fprintf(_mc->_debugLog, "<%llu> Executing ins %#x, pc = %#x, dSRC1: %d, regSRC1: %d, dSRC2: %d, regSRC2: %d, dDST: %d, writeREG: %d, writeFREG: %d, hiWPort: %d, loWPort: %d, memControl: %d, decodedShiftAmt: %d, btgt: %u, btaken: %d, bdslot: %d, isSyscall: %d, isIllegalOp: %d, branchOffset: %d, opControl: %p, memOp: %p, opResultHi: %u, opResultLo: %u\n",
+         #if MIPC_DEBUG
+         fprintf(_mc->_debugLog, "<%llu> Executing ins %#x, pc = %#x, dSRC1: %d, regSRC1: %d, dSRC2: %d, regSRC2: %d, dDST: %d, writeREG: %d, writeFREG: %d, hiWPort: %d, loWPort: %d, memControl: %d, decodedShiftAmt: %d, btgt: %u, btaken: %d, isSyscall: %d, isIllegalOp: %d, branchOffset: %d, opControl: %p, memOp: %p, opResultHi: %u, opResultLo: %u\n",
             SIM_TIME, _mc->_id_ex_r._ins, _mc->_id_ex_r._pc,
             _mc->_id_ex_r._decodedSRC1, _mc->_id_ex_r._regSRC1, _mc->_id_ex_r._decodedSRC2, _mc->_id_ex_r._regSRC2, 
             _mc->_id_ex_r._decodedDST, _mc->_id_ex_r._writeREG, _mc->_id_ex_r._writeFREG, 
             _mc->_id_ex_r._hiWPort, _mc->_id_ex_r._loWPort, _mc->_id_ex_r._memControl, 
             _mc->_id_ex_r._decodedShiftAmt, _mc->_id_ex_r._btgt, _mc->_id_ex_r._btaken, 
-            _mc->_id_ex_r._bdslot, _mc->_id_ex_r._isSyscall, _mc->_id_ex_r._isIllegalOp, 
+            _mc->_id_ex_r._isSyscall, _mc->_id_ex_r._isIllegalOp, 
             _mc->_id_ex_r._branchOffset, _mc->_id_ex_r._opControl, _mc->_id_ex_r._memOp, 
             _mc->_id_ex_r._opResultHi, _mc->_id_ex_r._opResultLo); 
         #endif
@@ -58,7 +58,11 @@ Exe::MainLoop (void)
                fprintf(_mc->_debugLog, "<%llu> Branch ins %#x in execution stage with pc = %#x, Btgt %#x\n", SIM_TIME, ins, _mc->_pc, _mc->_id_ex_r._btgt);
                _mc->_pc = _mc->_id_ex_r._btgt;
             }
+
+            #if BRANCH_INTERLOCK_ENABLED
             _mc->_lastbdslot = _mc->_id_ex_r._bdslot;
+            #endif
+
          }
         AWAIT_P_PHI1;	// @negedge
          _mc->_ex_mem_w = _mc->_id_ex_r;

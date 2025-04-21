@@ -40,12 +40,18 @@ Mipc::Dec (unsigned int ins)
    unsigned _decodedShiftAmt = 0;
    unsigned _subregOperand = 0;
    unsigned int _btgt = 0;
-   int _bdslot = 0;
+
+
    Bool _isSyscall = FALSE;
    Bool _isIllegalOp = FALSE;
    signed int _branchOffset = 0;
    Bool _data_stall = FALSE;
+   
+   #if BRANCH_INTERLOCK_ENABLED
    Bool _lastbdslot = FALSE;
+   int _bdslot = 0;
+   #endif
+
    Bool _btaken = FALSE;
    unsigned _regSRC1 = DEFAULT_REG;
    unsigned _regSRC2 = DEFAULT_REG;
@@ -195,7 +201,9 @@ Mipc::Dec (unsigned int ins)
       case 9:			// jalr
          _opControl = func_jalr;
          _btgt = _decodedSRC1;
+         #if BRANCH_INTERLOCK_ENABLED
          _bdslot = 1;
+         #endif
          break;
 
       case 8:			// jr
@@ -203,7 +211,9 @@ Mipc::Dec (unsigned int ins)
          _writeREG = FALSE;
          _writeFREG = FALSE;
          _btgt = _decodedSRC1;
+         #if BRANCH_INTERLOCK_ENABLED
          _bdslot = 1;
+         #endif
 	 break;
 
       case 0xd:			// await/break
@@ -330,7 +340,11 @@ Mipc::Dec (unsigned int ins)
       _hiWPort = FALSE;
       _loWPort = FALSE;
       _memControl = FALSE;
-      _branchOffset <<= 16; _branchOffset >>= 14; _bdslot = 1; _btgt = (unsigned)((signed)_pc+_branchOffset+4);
+      _branchOffset <<= 16; _branchOffset >>= 14; 
+      _btgt = (unsigned)((signed)_pc+_branchOffset+4);
+      #if BRANCH_INTERLOCK_ENABLED
+      _bdslot = 1; 
+      #endif
       break;
 
    case 1:
@@ -347,26 +361,42 @@ Mipc::Dec (unsigned int ins)
       switch (i.reg.rt) {
       case 1:			// bgez
          _opControl = func_bgez;
-         _branchOffset <<= 16; _branchOffset >>= 14; _bdslot = 1; _btgt = (unsigned)((signed)_pc+_branchOffset+4);
+         _branchOffset <<= 16; _branchOffset >>= 14; 
+         _btgt = (unsigned)((signed)_pc+_branchOffset+4);
+         #if BRANCH_INTERLOCK_ENABLED
+         _bdslot = 1; 
+         #endif
 	 break;
 
       case 0x11:			// bgezal
          _opControl = func_bgezal;
          _decodedDST = 31;
          _writeREG = TRUE;
-         _branchOffset <<= 16; _branchOffset >>= 14; _bdslot = 1; _btgt = (unsigned)((signed)_pc+_branchOffset+4);
+         _branchOffset <<= 16; _branchOffset >>= 14; 
+         _btgt = (unsigned)((signed)_pc+_branchOffset+4);
+         #if BRANCH_INTERLOCK_ENABLED
+         _bdslot = 1; 
+         #endif
 	 break;
 
       case 0x10:			// bltzal
          _opControl = func_bltzal;
          _decodedDST = 31;
          _writeREG = TRUE;
-         _branchOffset <<= 16; _branchOffset >>= 14; _bdslot = 1; _btgt = (unsigned)((signed)_pc+_branchOffset+4);
+         _branchOffset <<= 16; _branchOffset >>= 14; 
+         _btgt = (unsigned)((signed)_pc+_branchOffset+4);
+         #if BRANCH_INTERLOCK_ENABLED
+         _bdslot = 1; 
+         #endif
 	 break;
 
       case 0x0:			// bltz
          _opControl = func_bltz;
-         _branchOffset <<= 16; _branchOffset >>= 14; _bdslot = 1; _btgt = (unsigned)((signed)_pc+_branchOffset+4);
+         _branchOffset <<= 16; _branchOffset >>= 14; 
+         _btgt = (unsigned)((signed)_pc+_branchOffset+4);
+         #if BRANCH_INTERLOCK_ENABLED
+         _bdslot = 1; 
+         #endif
 	 break;
 
       default:
@@ -385,7 +415,11 @@ Mipc::Dec (unsigned int ins)
       _hiWPort = FALSE;
       _loWPort = FALSE;
       _memControl = FALSE;
-      _branchOffset <<= 16; _branchOffset >>= 14; _bdslot = 1; _btgt = (unsigned)((signed)_pc+_branchOffset+4);
+      _branchOffset <<= 16; _branchOffset >>= 14; 
+      _btgt = (unsigned)((signed)_pc+_branchOffset+4);
+      #if BRANCH_INTERLOCK_ENABLED
+      _bdslot = 1; 
+      #endif
       break;
 
    case 6:			// blez
@@ -398,7 +432,11 @@ Mipc::Dec (unsigned int ins)
       _hiWPort = FALSE;
       _loWPort = FALSE;
       _memControl = FALSE;
-      _branchOffset <<= 16; _branchOffset >>= 14; _bdslot = 1; _btgt = (unsigned)((signed)_pc+_branchOffset+4);
+      _branchOffset <<= 16; _branchOffset >>= 14; 
+      _btgt = (unsigned)((signed)_pc+_branchOffset+4);
+      #if BRANCH_INTERLOCK_ENABLED
+      _bdslot = 1; 
+      #endif
       break;
 
    case 5:			// bne
@@ -413,7 +451,11 @@ Mipc::Dec (unsigned int ins)
       _hiWPort = FALSE;
       _loWPort = FALSE;
       _memControl = FALSE;
-      _branchOffset <<= 16; _branchOffset >>= 14; _bdslot = 1; _btgt = (unsigned)((signed)_pc+_branchOffset+4);
+      _branchOffset <<= 16; _branchOffset >>= 14; 
+      _btgt = (unsigned)((signed)_pc+_branchOffset+4);
+      #if BRANCH_INTERLOCK_ENABLED
+      _bdslot = 1;
+      #endif
       break;
 
    case 2:			// j
@@ -424,7 +466,10 @@ Mipc::Dec (unsigned int ins)
       _hiWPort = FALSE;
       _loWPort = FALSE;
       _memControl = FALSE;
-      _btgt = ((_pc+4) & 0xf0000000) | (_branchOffset<<2); _bdslot = 1;
+      _btgt = ((_pc+4) & 0xf0000000) | (_branchOffset<<2); 
+      #if BRANCH_INTERLOCK_ENABLED
+      _bdslot = 1;
+      #endif
       break;
 
    case 3:			// jal
@@ -436,7 +481,10 @@ Mipc::Dec (unsigned int ins)
       _hiWPort = FALSE;
       _loWPort = FALSE;
       _memControl = FALSE;
-      _btgt = ((_pc+4) & 0xf0000000) | (_branchOffset<<2); _bdslot = 1;
+      _btgt = ((_pc+4) & 0xf0000000) | (_branchOffset<<2); 
+      #if BRANCH_INTERLOCK_ENABLED
+      _bdslot = 1;
+      #endif
       break;
 
    case 0x20:			// lb  
@@ -638,7 +686,7 @@ Mipc::Dec (unsigned int ins)
       break;
 
    case 0x11:			// floating-point
-      _fpinst++;
+      // _fpinst++;
       switch (i.freg.fmt) {
       case 4:			// mtc1
          _opControl = func_mtc1;
@@ -683,7 +731,7 @@ Mipc::Dec (unsigned int ins)
       _memControl = FALSE;
       break;
    }
-   // #ifdef MIPC_DEBUG
+   // #if MIPC_DEBUG
    //    fprintf(_debugLog, 
    //          "<%llu> Exec Helper1 ins %#x, pc %#x, dSRC1: %d, regSRC1: %d, dSRC2: %d, regSRC2: %d, dDST: %d, writeREG: %d, writeFREG: %d, hiWPort: %d, loWPort: %d, memControl: %d, decodedShiftAmt: %d, btgt: %u, btaken: %d, bdslot: %d, isSyscall: %d, isIllegalOp: %d, branchOffset: %d, opControl: %p, memOp: %p, opResultHi: %u, opResultLo: %u, hasFPSRC: %d\n", 
    //          SIM_TIME, _if_id_r._ins, _if_id_r._pc,
@@ -710,7 +758,6 @@ Mipc::Dec (unsigned int ins)
    _if_id_r._decodedShiftAmt = _decodedShiftAmt;
    _if_id_r._btgt = _btgt;
    _if_id_r._btaken = _btaken;
-   _if_id_r._bdslot = _bdslot;
    _if_id_r._isSyscall = _isSyscall;
    _if_id_r._isIllegalOp = _isIllegalOp;
    _if_id_r._branchOffset = _branchOffset;
@@ -719,16 +766,22 @@ Mipc::Dec (unsigned int ins)
    _if_id_r._opResultHi = _opResultHi;
    _if_id_r._opResultLo = _opResultLo;
    _if_id_r._hasFPSRC = _hasFPSRC;
+   _if_id_r._loRPort = _loRPort;
+   _if_id_r._hiRPort = _hiRPort;
+   #if BRANCH_INTERLOCK_ENABLED
+   _if_id_r._bdslot = _bdslot;
+   #endif
+   
 
-   #ifdef MIPC_DEBUG
+   #if MIPC_DEBUG
       fprintf(_debugLog, 
-            "<%llu> Exec Helper2 ins %#x, pc %#x, dSRC1: %d, regSRC1: %d, dSRC2: %d, regSRC2: %d, dDST: %d, writeREG: %d, writeFREG: %d, hiWPort: %d, loWPort: %d, memControl: %d, decodedShiftAmt: %d, btgt: %u, btaken: %d, bdslot: %d, isSyscall: %d, isIllegalOp: %d, branchOffset: %d, opControl: %p, memOp: %p, opResultHi: %u, opResultLo: %u, hasFPSRC: %d\n", 
+            "<%llu> Exec Helper2 ins %#x, pc %#x, dSRC1: %d, regSRC1: %d, dSRC2: %d, regSRC2: %d, dDST: %d, writeREG: %d, writeFREG: %d, hiWPort: %d, loWPort: %d, memControl: %d, decodedShiftAmt: %d, btgt: %u, btaken: %d, isSyscall: %d, isIllegalOp: %d, branchOffset: %d, opControl: %p, memOp: %p, opResultHi: %u, opResultLo: %u, hasFPSRC: %d\n", 
             SIM_TIME, _if_id_r._ins, _if_id_r._pc,
             _if_id_r._decodedSRC1, _if_id_r._regSRC1, _if_id_r._decodedSRC2, _if_id_r._regSRC2, 
             _if_id_r._decodedDST, _if_id_r._writeREG, _if_id_r._writeFREG, 
             _if_id_r._hiWPort, _if_id_r._loWPort, _if_id_r._memControl, 
             _if_id_r._decodedShiftAmt, _if_id_r._btgt, _if_id_r._btaken, 
-            _if_id_r._bdslot, _if_id_r._isSyscall, _if_id_r._isIllegalOp, 
+            _if_id_r._isSyscall, _if_id_r._isIllegalOp, 
             _if_id_r._branchOffset, _if_id_r._opControl, _if_id_r._memOp, 
             _if_id_r._opResultHi, _if_id_r._opResultLo, _if_id_r._hasFPSRC);
    #endif
@@ -753,7 +806,11 @@ Mipc::dumpregs (void)
       else
 	 printf ("r%d: %08x (%ld)\n", i, _gpr[i], _gpr[i]);
    }
+   #if BRANCH_INTERLOCK_ENABLED
    printf ("taken: %d, bd: %d\n", _btaken, _bdslot);
+   #else
+   printf ("taken: %d\n", _btaken);
+   #endif
    printf ("target: %08x\n", _btgt);
 }
 
@@ -1263,12 +1320,14 @@ Mipc::func_swr (Mipc *mc, unsigned ins)
 void
 Mipc::func_mtc1 (Mipc *mc, unsigned ins)
 {
+   mc->_fpinst++;
    mc->_id_ex_r._opResultLo = mc->_id_ex_r._decodedSRC1;
 }
 
 void
 Mipc::func_mfc1 (Mipc *mc, unsigned ins)
 {
+   mc->_fpinst++;
    mc->_id_ex_r._opResultLo = mc->_id_ex_r._decodedSRC1;
 }
 

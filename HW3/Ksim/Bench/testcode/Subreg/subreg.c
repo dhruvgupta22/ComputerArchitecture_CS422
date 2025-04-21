@@ -1,21 +1,11 @@
-#include <stdio.h>
-// code to include lwl, lwr, swr, swl
+#include<stdio.h>
+
 int main(){
-    int n;
-    char* arr;
-    int i;
-    int* p, *q, *r;
-    scanf("%d", &n);
-    arr = (char*)malloc(n*sizeof(char)); 
-    for(i=0; i<n; i++){
-        scanf("%c", &arr[i]);
-    }
-    for(i=0; i<n; i++){
-        printf("%c", arr[i]);
-    }
-    p = (int*)(arr+1);
-    q = (int*)(arr+2);
-    r = (int*)(arr+3);
-    printf("%d %d %d\n", *p, *q, *r);
-    return 0;
+	// char* ptr1;
+	char* ptr;
+	// ptr1 = (char*)malloc(100*sizeof(char));
+	ptr = (char*)malloc(50*sizeof(char));
+	memcpy(ptr, "Live simply so that others may simply live\0", 43);
+	printf("%s\n", ptr);
+	exit(2);
 }

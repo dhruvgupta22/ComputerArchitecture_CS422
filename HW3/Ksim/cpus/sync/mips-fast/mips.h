@@ -27,10 +27,8 @@ typedef unsigned Bool;
 #include "queue.h"
 
 #define MIPC_DEBUG 1
-
-#define BRANCH_INTERLOCK_ENABLED 1
+#define BRANCH_INTERLOCK_ENABLED 0
 #define DEFAULT_REG 0x20
-
 
 class PipeReg{
    public:
@@ -49,13 +47,17 @@ class PipeReg{
      Bool _memControl;
      unsigned _decodedShiftAmt;
      unsigned int _btgt;
-     int _bdslot;
      Bool _isSyscall;
      Bool _isIllegalOp;
      signed int _branchOffset;
      unsigned int _hi, _lo;
      Bool _data_stall;
+     
+     #if BRANCH_INTERLOCK_ENABLED
+     int _bdslot;
      Bool _lastbdslot;
+     #endif
+
      Bool _btaken;
      unsigned int _opResultLo;
      unsigned int _opResultHi;
@@ -108,6 +110,7 @@ public:
    Bool _syscall_present;
    unsigned int 	_gpr[32];		// general-purpose integer registers
    unsigned _regSRC1;
+   Bool _data_stall;
    unsigned _regSRC2;
 
    Bool _hiRPort;
@@ -122,11 +125,15 @@ public:
 
    unsigned int _hi, _lo; 			// mult, div destination
    unsigned int	_pc;				// Program counter
+
+   #if BRANCH_INTERLOCK_ENABLED
    unsigned int _lastbdslot;			// branch delay state
+   int 		_bdslot;				// 1 if the next ins is delay slot
+   #endif
+
    unsigned int _boot;				// boot code loaded?
 
    int 		_btaken; 			// taken branch (1 if taken, 0 if fall-through)
-   int 		_bdslot;				// 1 if the next ins is delay slot
    unsigned int	_btgt;				// branch target
     int _stall;             // if 1, fetcher is stalled
     
