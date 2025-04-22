@@ -9,6 +9,7 @@ class Exe : public SimObject {
 public:
    Exe (Mipc*);
    ~Exe ();
+   void pick_bypass_value();
   
    FAKE_SIM_TEMPLATE;
 

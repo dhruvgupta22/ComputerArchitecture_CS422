@@ -1404,46 +1404,81 @@ Mipc::mem_lwc1 (Mipc *mc)
 
 void
 Mipc::mem_swc1 (Mipc *mc)
-{
-   mc->_mem->Write(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7, mc->_mem->BESetWord (mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7), mc->_fpr[mc->_ex_mem_r._decodedDST>>1].l[FP_TWIDDLE^(mc->_ex_mem_r._decodedDST&1)]));
+{  
+   LL val = mc->_fpr[mc->_ex_mem_r._decodedDST>>1].l[FP_TWIDDLE^(mc->_ex_mem_r._decodedDST&1)];
+   #if BYPASS_MEM_MEM_ENABLED
+   if(mc->_ex_mem_r._bypass3 == BYPASS_MEM_MEM){
+      val = mc->_ex_mem_r._opResultLo;
+   }
+   #endif
+   mc->_mem->Write(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7, mc->_mem->BESetWord (mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7), val));
 }
 
 void
 Mipc::mem_sb (Mipc *mc)
-{
-   mc->_mem->Write(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7, mc->_mem->BESetByte (mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7), mc->_gpr[mc->_ex_mem_r._decodedDST] & 0xff));
+{  
+   LL val = mc->_gpr[mc->_ex_mem_r._decodedDST];
+   #if BYPASS_MEM_MEM_ENABLED
+   if(mc->_ex_mem_r._bypass3 == BYPASS_MEM_MEM){
+      val = mc->_ex_mem_r._opResultLo;
+   }
+   #endif
+   mc->_mem->Write(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7, mc->_mem->BESetByte (mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7), val & 0xff));
 }
 
 void
 Mipc::mem_sh (Mipc *mc)
 {
-   mc->_mem->Write(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7, mc->_mem->BESetHalfWord (mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7), mc->_gpr[mc->_ex_mem_r._decodedDST] & 0xffff));
+   LL val = mc->_gpr[mc->_ex_mem_r._decodedDST];
+   #if BYPASS_MEM_MEM_ENABLED
+   if(mc->_ex_mem_r._bypass3 == BYPASS_MEM_MEM){
+      val = mc->_ex_mem_r._opResultLo;
+   }
+   #endif
+   mc->_mem->Write(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7, mc->_mem->BESetHalfWord (mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7), val & 0xffff));
 }
 
 void
 Mipc::mem_swl (Mipc *mc)
 {
+   LL val = mc->_gpr[mc->_ex_mem_r._decodedDST];
+   #if BYPASS_MEM_MEM_ENABLED
+   if(mc->_ex_mem_r._bypass3 == BYPASS_MEM_MEM){
+      val = mc->_ex_mem_r._opResultLo;
+   }  
+   #endif
    unsigned ar1, s1;
 
    ar1 = mc->_mem->BEGetWord (mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7));
    s1 = (mc->_ex_mem_r._mem_addr_reg & 3) << 3;
-   ar1 = (mc->_gpr[mc->_ex_mem_r._decodedDST] >> s1) | (ar1 & ~(~(unsigned)0 >> s1));
+   ar1 = (val >> s1) | (ar1 & ~(~(unsigned)0 >> s1));
    mc->_mem->Write(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7, mc->_mem->BESetWord (mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7), ar1));
 }
 
 void
 Mipc::mem_sw (Mipc *mc)
 {
-   mc->_mem->Write(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7, mc->_mem->BESetWord (mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7), mc->_gpr[mc->_ex_mem_r._decodedDST]));
+   LL val = mc->_gpr[mc->_ex_mem_r._decodedDST];
+   #if BYPASS_MEM_MEM_ENABLED
+   if(mc->_ex_mem_r._bypass3 == BYPASS_MEM_MEM){
+      val = mc->_ex_mem_r._opResultLo;
+   }
+   #endif
+   mc->_mem->Write(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7, mc->_mem->BESetWord (mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7), val));
 }
 
 void
 Mipc::mem_swr (Mipc *mc)
 {
    unsigned ar1, s1;
-
+   LL val = mc->_gpr[mc->_ex_mem_r._decodedDST];
+   #if BYPASS_MEM_MEM_ENABLED
+   if(mc->_ex_mem_r._bypass3 == BYPASS_MEM_MEM){
+      val = mc->_ex_mem_r._opResultLo;
+   }
+   #endif
    ar1 = mc->_mem->BEGetWord (mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7));
    s1 = (~mc->_ex_mem_r._mem_addr_reg & 3) << 3;
-   ar1 = (mc->_gpr[mc->_ex_mem_r._decodedDST] << s1) | (ar1 & ~(~0UL << s1));
+   ar1 = (val << s1) | (ar1 & ~(~0UL << s1));
    mc->_mem->Write(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7, mc->_mem->BESetWord (mc->_ex_mem_r._mem_addr_reg, mc->_mem->Read(mc->_ex_mem_r._mem_addr_reg & ~(LL)0x7), ar1));
 }

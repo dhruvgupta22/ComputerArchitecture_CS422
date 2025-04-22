@@ -7,6 +7,7 @@ Memory::Memory(Mipc *mc)
 
 Memory::~Memory(void) {}
 
+
 void Memory::MainLoop(void)
 {
    Bool memControl;

@@ -1,33 +1,40 @@
 #!/bin/bash
 
-# List of folder names
 folders=(
   asm-sim c-sim endian factorial fib hello host
   ifactorial ifib log2 msort rfib Subreg towers vadd
 )
 
-# Output directory
 mkdir -p output
 
-# Run simulation for each folder
 for folder in "${folders[@]}"; do
-  # Get the image file name (based on folder name)
-  image="$HOME/Ksim/Bench/testcode/$folder/$folder"
+  test_path="$HOME/Ksim/Bench/testcode/$folder"
+  (cd "$test_path"; gmake clobber clean; gmake)
 
-  # Special case: 'fact' folder has file named 'factorial.image'
+  image="$test_path/$folder"
+
   if [ "$folder" = "asm-sim" ]; then
-    image="$HOME/Ksim/Bench/testcode/asm-sim/example"
-  fi
-  if [ "$folder" = "c-sim" ]; then
-    image="$HOME/Ksim/Bench/testcode/c-sim/example"
-  fi
-  if [ "$folder" = "Subreg" ]; then
-    image="$HOME/Ksim/Bench/testcode/Subreg/subreg"
+    image="$test_path/example"
+  elif [ "$folder" = "c-sim" ]; then
+    image="$test_path/example"
+  elif [ "$folder" = "Subreg" ]; then
+    image="$test_path/subreg"
   fi
 
-  # Run simulation
+  echo "Checking image: $image"
+  if [ ! -f "$image" ]; then
+    echo "Image not found for $folder"
+    continue
+  fi
+
+  cd "$HOME/Ksim/cpus/sync/mips-fast"
+  echo "Running mipc with: $image"
   ./mipc "$image"
 
-  # Move output file
+  if [ ! -f mipc.log ]; then
+    echo "mipc.log not generated for $folder"
+    continue
+  fi
+
   mv mipc.log "./output/$folder.out"
 done

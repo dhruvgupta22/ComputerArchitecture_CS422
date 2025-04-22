@@ -26,12 +26,17 @@ typedef unsigned Bool;
 #include "../../common/syscall.h"
 #include "queue.h"
 
-#define MIPC_DEBUG 1
+#define MIPC_DEBUG 0
 #define BRANCH_INTERLOCK_ENABLED 0
 #define BYPASS_EX_EX_ENABLED 1
-#define BYPASS_MEM_EX_ENABLED 0
-#define BYPASS_MEM_MEM_ENABLED 0
-#define BYPASS_ENABLED (BYPASS_EX_EX_ENABLED | BYPASS_MEM_EX_ENABLED | BYPASS_MEM_MEM_ENABLED)
+#define BYPASS_MEM_EX_ENABLED 1
+#define BYPASS_MEM_MEM_ENABLED 1
+// #define BYPASS_ENABLED (BYPASS_EX_EX_ENABLED | BYPASS_MEM_EX_ENABLED | BYPASS_MEM_MEM_ENABLED)
+#define BYPASS_NONE 0x0
+#define BYPASS_EX_EX 0x1    // ex_mem_w
+#define BYPASS_MEM_EX 0x2   // mem_wb_w
+#define BYPASS_MEM_MEM 0x4  // mem_wb_w
+#define TAKE_FROM_HI 0x8
 #define DEFAULT_REG 0x20
 
 
@@ -57,6 +62,10 @@ class PipeReg{
      signed int _branchOffset;
      unsigned int _hi, _lo;
      Bool _data_stall;
+     unsigned int _bypass1; // src1
+     unsigned int _bypass2; // src2
+     unsigned int _bypass3; // dst
+     unsigned int _bypass_val;
      
      #if BRANCH_INTERLOCK_ENABLED
      int _bdslot;
@@ -154,6 +163,7 @@ public:
    LL   _num_load;
    LL   _num_store;
    LL   _fpinst;
+   LL  _num_load_interlock;
 
    Mem	*_mem;	// attached memory (not a cache)
 

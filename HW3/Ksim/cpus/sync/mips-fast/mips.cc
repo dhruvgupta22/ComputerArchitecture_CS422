@@ -63,7 +63,10 @@ void PipeReg::flush_regs(){
    _hasFPSRC = FALSE;
    _subregOperand = 0;
    _data_stall = FALSE;
-   
+   _bypass1 = BYPASS_NONE;
+   _bypass2 = BYPASS_NONE;
+   _bypass3 = BYPASS_NONE;
+   _bypass_val = 0;
 }
 
 void 
@@ -96,6 +99,7 @@ Mipc::MainLoop (void)
          #if MIPC_DEBUG
          fprintf(_debugLog, "<%llu> Fetched PC data stall %#x\n", SIM_TIME, _pc);
          #endif
+         _num_load_interlock++;
          continue;
         }
         #if BRANCH_INTERLOCK_ENABLED
@@ -162,6 +166,7 @@ Mipc::MipcDumpstats()
   l.print ("Number of syscall emulated loads: %llu", _sys->_num_load);
   l.print ("Number of stores: %llu", _num_store);
   l.print ("Number of syscall emulated stores: %llu", _sys->_num_store);
+  l.print("Number of load interlocks: %llu", _num_load_interlock);
   l.print ("");
 
 }
@@ -211,6 +216,7 @@ Mipc::Reboot (char *image)
       _num_cond_br = 0;
       _num_jal = 0;
       _num_jr = 0;
+      _num_load_interlock = 0;
 
       #if BRANCH_INTERLOCK_ENABLED
       _lastbdslot = 0;

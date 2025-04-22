@@ -9,8 +9,7 @@ class Decode : public SimObject {
 public:
    Decode (Mipc*);
    ~Decode ();
-   bool checkDataHazard();
-   void ex_ex_bypass();
+   Bool detectStall();
   
    FAKE_SIM_TEMPLATE;
 
