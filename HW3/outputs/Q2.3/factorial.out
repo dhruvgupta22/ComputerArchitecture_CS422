@@ -1,0 +1,15 @@
+2732 1:<FETCH> 
+2732 1:<FETCH> ************************************************************
+2732 1:<FETCH> 
+2732 1:<FETCH> Number of instructions: 2408
+2732 1:<FETCH> Number of simulated cycles: 2732
+2732 1:<FETCH> CPI: 1.13
+2732 1:<FETCH> Int Conditional Branches: 466
+2732 1:<FETCH> Jump and Link: 38
+2732 1:<FETCH> Jump Register: 36
+2732 1:<FETCH> Number of fp instructions: 2
+2732 1:<FETCH> Number of loads: 349
+2732 1:<FETCH> Number of syscall emulated loads: 68
+2732 1:<FETCH> Number of stores: 163
+2732 1:<FETCH> Number of syscall emulated stores: 55
+2732 1:<FETCH> 

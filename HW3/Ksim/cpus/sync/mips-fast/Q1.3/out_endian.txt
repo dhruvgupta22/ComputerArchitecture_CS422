@@ -1,5 +1,0 @@
-File: endian.log
-Total Instructions: 1965
-% Loads: 19.13%
-% Stores: 11.04%
-% Conditional Branches: 18.01%

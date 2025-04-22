@@ -1,5 +1,0 @@
-File: factorial.log
-Total Instructions: 2530
-% Loads: 16.48%
-% Stores: 8.61%
-% Conditional Branches: 18.41%

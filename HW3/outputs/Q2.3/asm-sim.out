@@ -1,0 +1,15 @@
+64 1:<FETCH> 
+64 1:<FETCH> ************************************************************
+64 1:<FETCH> 
+64 1:<FETCH> Number of instructions: 50
+64 1:<FETCH> Number of simulated cycles: 64
+64 1:<FETCH> CPI: 1.28
+64 1:<FETCH> Int Conditional Branches: 0
+64 1:<FETCH> Jump and Link: 4
+64 1:<FETCH> Jump Register: 2
+64 1:<FETCH> Number of fp instructions: 0
+64 1:<FETCH> Number of loads: 4
+64 1:<FETCH> Number of syscall emulated loads: 58
+64 1:<FETCH> Number of stores: 4
+64 1:<FETCH> Number of syscall emulated stores: 51
+64 1:<FETCH> 

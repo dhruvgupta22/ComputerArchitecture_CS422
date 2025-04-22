@@ -160,11 +160,13 @@ Mipc::Dec (unsigned int ins)
 
       case 0x10:			// mfhi
          _opControl = func_mfhi;
+         _decodedSRC1 = _hi;
          _hiRPort = TRUE;
 	 break;
 
       case 0x12:			// mflo
          _opControl = func_mflo;
+         _decodedSRC1 = _lo;
          _loRPort = TRUE;
 	 break;
 
@@ -200,7 +202,7 @@ Mipc::Dec (unsigned int ins)
 
       case 9:			// jalr
          _opControl = func_jalr;
-         _btgt = _decodedSRC1;
+         // _btgt = _decodedSRC1;
          #if BRANCH_INTERLOCK_ENABLED
          _bdslot = 1;
          #endif
@@ -210,7 +212,7 @@ Mipc::Dec (unsigned int ins)
          _opControl = func_jr;
          _writeREG = FALSE;
          _writeFREG = FALSE;
-         _btgt = _decodedSRC1;
+         // _btgt = _decodedSRC1;
          #if BRANCH_INTERLOCK_ENABLED
          _bdslot = 1;
          #endif
@@ -943,13 +945,13 @@ Mipc::func_divu (Mipc *mc, unsigned ins)
 void
 Mipc::func_mfhi (Mipc *mc, unsigned ins)
 {
-   mc->_id_ex_r._opResultLo = mc->_hi;
+   mc->_id_ex_r._opResultLo = mc->_id_ex_r._decodedSRC1;
 }
 
 void
 Mipc::func_mflo (Mipc *mc, unsigned ins)
 {
-   mc->_id_ex_r._opResultLo = mc->_lo;
+   mc->_id_ex_r._opResultLo = mc->_id_ex_r._decodedSRC1;
 }
 
 void
@@ -1024,7 +1026,7 @@ Mipc::func_jalr (Mipc *mc, unsigned ins)
 {
    mc->_id_ex_r._btaken = 1;
    mc->_num_jal++;
-   // mc->_id_ex_r._btgt = mc->_id_ex_r._decodedSRC1;
+   mc->_id_ex_r._btgt = mc->_id_ex_r._decodedSRC1;
    mc->_id_ex_r._opResultLo = mc->_id_ex_r._pc + 8;
 }
 
@@ -1033,7 +1035,7 @@ Mipc::func_jr (Mipc *mc, unsigned ins)
 {
    mc->_id_ex_r._btaken = 1;
    mc->_num_jr++;
-   // mc->_id_ex_r._btgt = mc->_id_ex_r._decodedSRC1;
+   mc->_id_ex_r._btgt = mc->_id_ex_r._decodedSRC1;
 }
 
 void

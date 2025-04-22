@@ -1,5 +1,0 @@
-File: log2.log
-Total Instructions: 2096
-% Loads: 17.89%
-% Stores: 8.34%
-% Conditional Branches: 19.60%

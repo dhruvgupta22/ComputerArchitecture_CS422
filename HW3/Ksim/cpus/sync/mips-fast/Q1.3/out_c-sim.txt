@@ -1,5 +1,0 @@
-File: c-sim.log
-Total Instructions: 1928
-% Loads: 17.42%
-% Stores: 8.19%
-% Conditional Branches: 19.29%

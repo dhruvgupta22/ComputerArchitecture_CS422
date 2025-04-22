@@ -1,5 +1,0 @@
-File: rfib.log
-Total Instructions: 25668
-% Loads: 14.39%
-% Stores: 17.02%
-% Conditional Branches: 9.51%
