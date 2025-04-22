@@ -1,0 +1,16 @@
+7469 1:<FETCH> 
+7469 1:<FETCH> ************************************************************
+7469 1:<FETCH> 
+7469 1:<FETCH> Number of instructions: 7454
+7469 1:<FETCH> Number of simulated cycles: 7469
+7469 1:<FETCH> CPI: 1.00
+7469 1:<FETCH> Int Conditional Branches: 1327
+7469 1:<FETCH> Jump and Link: 105
+7469 1:<FETCH> Jump Register: 114
+7469 1:<FETCH> Number of fp instructions: 28
+7469 1:<FETCH> Number of loads: 1205
+7469 1:<FETCH> Number of syscall emulated loads: 83
+7469 1:<FETCH> Number of stores: 714
+7469 1:<FETCH> Number of syscall emulated stores: 45
+7469 1:<FETCH> Number of load interlocks: 1
+7469 1:<FETCH> 

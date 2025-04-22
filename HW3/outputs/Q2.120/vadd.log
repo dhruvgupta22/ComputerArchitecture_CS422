@@ -1,0 +1,16 @@
+7145 1:<FETCH> 
+7145 1:<FETCH> ************************************************************
+7145 1:<FETCH> 
+7145 1:<FETCH> Number of instructions: 7130
+7145 1:<FETCH> Number of simulated cycles: 7145
+7145 1:<FETCH> CPI: 1.00
+7145 1:<FETCH> Int Conditional Branches: 768
+7145 1:<FETCH> Jump and Link: 27
+7145 1:<FETCH> Jump Register: 25
+7145 1:<FETCH> Number of fp instructions: 2
+7145 1:<FETCH> Number of loads: 361
+7145 1:<FETCH> Number of syscall emulated loads: 85
+7145 1:<FETCH> Number of stores: 1142
+7145 1:<FETCH> Number of syscall emulated stores: 45
+7145 1:<FETCH> Number of load interlocks: 1
+7145 1:<FETCH> 

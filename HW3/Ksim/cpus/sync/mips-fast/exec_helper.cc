@@ -733,20 +733,7 @@ Mipc::Dec (unsigned int ins)
       _memControl = FALSE;
       break;
    }
-   // #if MIPC_DEBUG
-   //    fprintf(_debugLog, 
-   //          "<%llu> Exec Helper1 ins %#x, pc %#x, dSRC1: %d, regSRC1: %d, dSRC2: %d, regSRC2: %d, dDST: %d, writeREG: %d, writeFREG: %d, hiWPort: %d, loWPort: %d, memControl: %d, decodedShiftAmt: %d, btgt: %u, btaken: %d, bdslot: %d, isSyscall: %d, isIllegalOp: %d, branchOffset: %d, opControl: %p, memOp: %p, opResultHi: %u, opResultLo: %u, hasFPSRC: %d\n", 
-   //          SIM_TIME, _if_id_r._ins, _if_id_r._pc,
-   //          _if_id_r._decodedSRC1, _if_id_r._regSRC1, _if_id_r._decodedSRC2, _if_id_r._regSRC2, 
-   //          _if_id_r._decodedDST, _if_id_r._writeREG, _if_id_r._writeFREG, 
-   //          _if_id_r._hiWPort, _if_id_r._loWPort, _if_id_r._memControl, 
-   //          _if_id_r._decodedShiftAmt, _if_id_r._btgt, _if_id_r._btaken, 
-   //          _if_id_r._bdslot, _if_id_r._isSyscall, _if_id_r._isIllegalOp, 
-   //          _if_id_r._branchOffset, _if_id_r._opControl, _if_id_r._memOp, 
-   //          _if_id_r._opResultHi, _if_id_r._opResultLo, _if_id_r._hasFPSRC);
-   // #endif
-   // _if_id_r._pc = _pc;
-   // _if_id_r._ins = ins;
+
    _if_id_r._decodedSRC1 = _decodedSRC1;
    _if_id_r._regSRC1 = _regSRC1;
    _if_id_r._decodedSRC2 = _decodedSRC2;

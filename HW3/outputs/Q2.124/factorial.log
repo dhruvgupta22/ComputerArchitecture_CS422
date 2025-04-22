@@ -1,0 +1,16 @@
+2422 1:<FETCH> 
+2422 1:<FETCH> ************************************************************
+2422 1:<FETCH> 
+2422 1:<FETCH> Number of instructions: 2408
+2422 1:<FETCH> Number of simulated cycles: 2422
+2422 1:<FETCH> CPI: 1.01
+2422 1:<FETCH> Int Conditional Branches: 466
+2422 1:<FETCH> Jump and Link: 38
+2422 1:<FETCH> Jump Register: 36
+2422 1:<FETCH> Number of fp instructions: 2
+2422 1:<FETCH> Number of loads: 349
+2422 1:<FETCH> Number of syscall emulated loads: 68
+2422 1:<FETCH> Number of stores: 163
+2422 1:<FETCH> Number of syscall emulated stores: 55
+2422 1:<FETCH> Number of load interlocks: 0
+2422 1:<FETCH> 

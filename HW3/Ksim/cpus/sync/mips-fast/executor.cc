@@ -26,9 +26,6 @@ void Exe::pick_bypass_value(){
    #if BYPASS_EX_EX_ENABLED
    if(_mc->_id_ex_r._bypass1 == BYPASS_EX_EX){
       _mc->_id_ex_r._decodedSRC1 = _mc->_ex_mem_w._opResultLo;
-      // #if MIPC_DEBUG
-      //    fprintf(_mc->_debugLog, "<%llu> Executed ins %#x in ex-ex bypass. if-id-w %u id-ex-w %u ex-mem-w %u mem-wb-w %u if-id-r %u id-ex-r %u ex-mem-r %u mem-wb-r %u dSRC1 %u\n", SIM_TIME, _mc->_id_ex_r._ins, _mc->_if_id_w._opResultLo, _mc->_id_ex_w._opResultLo, _mc->_ex_mem_w._opResultLo, _mc->_mem_wb_w._opResultLo, _mc->_if_id_r._opResultLo, _mc->_id_ex_r._opResultLo, _mc->_ex_mem_r._opResultLo, _mc->_mem_wb_r._opResultLo, _mc->_id_ex_r._decodedSRC1);
-      // #endif
    }
    if(_mc->_id_ex_r._bypass2 == BYPASS_EX_EX){
       _mc->_id_ex_r._decodedSRC2 = _mc->_ex_mem_w._opResultLo;
@@ -101,7 +98,10 @@ Exe::MainLoop (void)
          if (!isIllegalOp && !isSyscall) {
             if (_mc->_id_ex_r._btaken)
             {
-               fprintf(_mc->_debugLog, "<%llu> Branch ins %#x in execution stage with pc = %#x, Btgt %#x\n", SIM_TIME, ins, _mc->_pc, _mc->_id_ex_r._btgt);
+               #if MIPC_DEBUG
+               fprintf(_mc->_debugLog, "<%llu> Branch ins %#x in execution stage with pc = %#x, Btgt %#x\n", SIM_TIME, ins, _mc->_pc, 
+                  _mc->_id_ex_r._btgt);
+               #endif
                _mc->_pc = _mc->_id_ex_r._btgt;
             }
 

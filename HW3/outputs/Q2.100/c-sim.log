@@ -1,0 +1,16 @@
+2083 1:<FETCH> 
+2083 1:<FETCH> ************************************************************
+2083 1:<FETCH> 
+2083 1:<FETCH> Number of instructions: 1826
+2083 1:<FETCH> Number of simulated cycles: 2083
+2083 1:<FETCH> CPI: 1.14
+2083 1:<FETCH> Int Conditional Branches: 372
+2083 1:<FETCH> Jump and Link: 26
+2083 1:<FETCH> Jump Register: 24
+2083 1:<FETCH> Number of fp instructions: 2
+2083 1:<FETCH> Number of loads: 282
+2083 1:<FETCH> Number of syscall emulated loads: 54
+2083 1:<FETCH> Number of stores: 109
+2083 1:<FETCH> Number of syscall emulated stores: 49
+2083 1:<FETCH> Number of load interlocks: 243
+2083 1:<FETCH> 

@@ -1,0 +1,16 @@
+92938 1:<FETCH> 
+92938 1:<FETCH> ************************************************************
+92938 1:<FETCH> 
+92938 1:<FETCH> Number of instructions: 80652
+92938 1:<FETCH> Number of simulated cycles: 92938
+92938 1:<FETCH> CPI: 1.15
+92938 1:<FETCH> Int Conditional Branches: 17002
+92938 1:<FETCH> Jump and Link: 1025
+92938 1:<FETCH> Jump Register: 1211
+92938 1:<FETCH> Number of fp instructions: 126
+92938 1:<FETCH> Number of loads: 14537
+92938 1:<FETCH> Number of syscall emulated loads: 2063
+92938 1:<FETCH> Number of stores: 6976
+92938 1:<FETCH> Number of syscall emulated stores: 49
+92938 1:<FETCH> Number of load interlocks: 12086
+92938 1:<FETCH> 

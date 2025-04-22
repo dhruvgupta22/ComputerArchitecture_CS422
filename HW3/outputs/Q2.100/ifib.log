@@ -1,0 +1,16 @@
+8553 1:<FETCH> 
+8553 1:<FETCH> ************************************************************
+8553 1:<FETCH> 
+8553 1:<FETCH> Number of instructions: 7454
+8553 1:<FETCH> Number of simulated cycles: 8553
+8553 1:<FETCH> CPI: 1.15
+8553 1:<FETCH> Int Conditional Branches: 1327
+8553 1:<FETCH> Jump and Link: 105
+8553 1:<FETCH> Jump Register: 114
+8553 1:<FETCH> Number of fp instructions: 28
+8553 1:<FETCH> Number of loads: 1205
+8553 1:<FETCH> Number of syscall emulated loads: 83
+8553 1:<FETCH> Number of stores: 714
+8553 1:<FETCH> Number of syscall emulated stores: 45
+8553 1:<FETCH> Number of load interlocks: 1085
+8553 1:<FETCH> 

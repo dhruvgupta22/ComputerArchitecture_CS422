@@ -1,0 +1,16 @@
+2334 1:<FETCH> 
+2334 1:<FETCH> ************************************************************
+2334 1:<FETCH> 
+2334 1:<FETCH> Number of instructions: 2314
+2334 1:<FETCH> Number of simulated cycles: 2334
+2334 1:<FETCH> CPI: 1.01
+2334 1:<FETCH> Int Conditional Branches: 453
+2334 1:<FETCH> Jump and Link: 35
+2334 1:<FETCH> Jump Register: 32
+2334 1:<FETCH> Number of fp instructions: 2
+2334 1:<FETCH> Number of loads: 420
+2334 1:<FETCH> Number of syscall emulated loads: 90
+2334 1:<FETCH> Number of stores: 176
+2334 1:<FETCH> Number of syscall emulated stores: 49
+2334 1:<FETCH> Number of load interlocks: 0
+2334 1:<FETCH> 

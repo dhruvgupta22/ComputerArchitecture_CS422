@@ -1,0 +1,16 @@
+8743 1:<FETCH> 
+8743 1:<FETCH> ************************************************************
+8743 1:<FETCH> 
+8743 1:<FETCH> Number of instructions: 7130
+8743 1:<FETCH> Number of simulated cycles: 8743
+8743 1:<FETCH> CPI: 1.23
+8743 1:<FETCH> Int Conditional Branches: 768
+8743 1:<FETCH> Jump and Link: 27
+8743 1:<FETCH> Jump Register: 25
+8743 1:<FETCH> Number of fp instructions: 2
+8743 1:<FETCH> Number of loads: 361
+8743 1:<FETCH> Number of syscall emulated loads: 85
+8743 1:<FETCH> Number of stores: 1142
+8743 1:<FETCH> Number of syscall emulated stores: 45
+8743 1:<FETCH> Number of load interlocks: 1599
+8743 1:<FETCH> 

@@ -80,9 +80,6 @@ Mipc::MainLoop (void)
     _nfetched = 0;
 
     while (!_sim_exit) {
-         // #if MIPC_DEBUG
-         // fprintf(_debugLog, "<%llu> Fetcher PC enter %#x\n", SIM_TIME, _pc);
-         // #endif
         AWAIT_P_PHI0;	// @posedge
         /* Do nothing in positive half cycle */
      

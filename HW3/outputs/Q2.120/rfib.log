@@ -1,0 +1,16 @@
+25556 1:<FETCH> 
+25556 1:<FETCH> ************************************************************
+25556 1:<FETCH> 
+25556 1:<FETCH> Number of instructions: 25541
+25556 1:<FETCH> Number of simulated cycles: 25556
+25556 1:<FETCH> CPI: 1.00
+25556 1:<FETCH> Int Conditional Branches: 2442
+25556 1:<FETCH> Jump and Link: 1297
+25556 1:<FETCH> Jump Register: 1306
+25556 1:<FETCH> Number of fp instructions: 28
+25556 1:<FETCH> Number of loads: 3613
+25556 1:<FETCH> Number of syscall emulated loads: 83
+25556 1:<FETCH> Number of stores: 4326
+25556 1:<FETCH> Number of syscall emulated stores: 45
+25556 1:<FETCH> Number of load interlocks: 1
+25556 1:<FETCH> 

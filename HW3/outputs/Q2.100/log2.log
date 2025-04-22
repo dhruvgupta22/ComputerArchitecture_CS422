@@ -1,0 +1,16 @@
+2286 1:<FETCH> 
+2286 1:<FETCH> ************************************************************
+2286 1:<FETCH> 
+2286 1:<FETCH> Number of instructions: 1996
+2286 1:<FETCH> Number of simulated cycles: 2286
+2286 1:<FETCH> CPI: 1.15
+2286 1:<FETCH> Int Conditional Branches: 411
+2286 1:<FETCH> Jump and Link: 31
+2286 1:<FETCH> Jump Register: 29
+2286 1:<FETCH> Number of fp instructions: 2
+2286 1:<FETCH> Number of loads: 319
+2286 1:<FETCH> Number of syscall emulated loads: 56
+2286 1:<FETCH> Number of stores: 130
+2286 1:<FETCH> Number of syscall emulated stores: 45
+2286 1:<FETCH> Number of load interlocks: 276
+2286 1:<FETCH> 

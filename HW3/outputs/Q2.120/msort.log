@@ -1,0 +1,16 @@
+17119 1:<FETCH> 
+17119 1:<FETCH> ************************************************************
+17119 1:<FETCH> 
+17119 1:<FETCH> Number of instructions: 17104
+17119 1:<FETCH> Number of simulated cycles: 17119
+17119 1:<FETCH> CPI: 1.00
+17119 1:<FETCH> Int Conditional Branches: 3121
+17119 1:<FETCH> Jump and Link: 26
+17119 1:<FETCH> Jump Register: 23
+17119 1:<FETCH> Number of fp instructions: 2
+17119 1:<FETCH> Number of loads: 1754
+17119 1:<FETCH> Number of syscall emulated loads: 69
+17119 1:<FETCH> Number of stores: 890
+17119 1:<FETCH> Number of syscall emulated stores: 47
+17119 1:<FETCH> Number of load interlocks: 1
+17119 1:<FETCH> 
