@@ -1,0 +1,16 @@
+21033 1:<FETCH> 
+21033 1:<FETCH> ************************************************************
+21033 1:<FETCH> 
+21033 1:<FETCH> Number of instructions: 14520
+21033 1:<FETCH> Number of simulated cycles: 21033
+21033 1:<FETCH> CPI: 1.45
+21033 1:<FETCH> Int Conditional Branches: 2863
+21033 1:<FETCH> Jump and Link: 214
+21033 1:<FETCH> Jump Register: 232
+21033 1:<FETCH> Number of fp instructions: 38
+21033 1:<FETCH> Number of loads: 2675
+21033 1:<FETCH> Number of syscall emulated loads: 319
+21033 1:<FETCH> Number of stores: 1422
+21033 1:<FETCH> Number of syscall emulated stores: 56
+21033 1:<FETCH> Number of load interlocks: 6442
+21033 1:<FETCH> 

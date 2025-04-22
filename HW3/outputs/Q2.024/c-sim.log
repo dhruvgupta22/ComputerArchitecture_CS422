@@ -1,0 +1,16 @@
+2319 1:<FETCH> 
+2319 1:<FETCH> ************************************************************
+2319 1:<FETCH> 
+2319 1:<FETCH> Number of instructions: 1826
+2319 1:<FETCH> Number of simulated cycles: 2319
+2319 1:<FETCH> CPI: 1.27
+2319 1:<FETCH> Int Conditional Branches: 372
+2319 1:<FETCH> Jump and Link: 26
+2319 1:<FETCH> Jump Register: 24
+2319 1:<FETCH> Number of fp instructions: 2
+2319 1:<FETCH> Number of loads: 282
+2319 1:<FETCH> Number of syscall emulated loads: 54
+2319 1:<FETCH> Number of stores: 109
+2319 1:<FETCH> Number of syscall emulated stores: 49
+2319 1:<FETCH> Number of load interlocks: 479
+2319 1:<FETCH> 

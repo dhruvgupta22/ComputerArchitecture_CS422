@@ -1,0 +1,16 @@
+29341 1:<FETCH> 
+29341 1:<FETCH> ************************************************************
+29341 1:<FETCH> 
+29341 1:<FETCH> Number of instructions: 17104
+29341 1:<FETCH> Number of simulated cycles: 29341
+29341 1:<FETCH> CPI: 1.72
+29341 1:<FETCH> Int Conditional Branches: 3121
+29341 1:<FETCH> Jump and Link: 26
+29341 1:<FETCH> Jump Register: 23
+29341 1:<FETCH> Number of fp instructions: 2
+29341 1:<FETCH> Number of loads: 1754
+29341 1:<FETCH> Number of syscall emulated loads: 69
+29341 1:<FETCH> Number of stores: 890
+29341 1:<FETCH> Number of syscall emulated stores: 47
+29341 1:<FETCH> Number of load interlocks: 12223
+29341 1:<FETCH> 

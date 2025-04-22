@@ -1,0 +1,16 @@
+2643 1:<FETCH> 
+2643 1:<FETCH> ************************************************************
+2643 1:<FETCH> 
+2643 1:<FETCH> Number of instructions: 1639
+2643 1:<FETCH> Number of simulated cycles: 2643
+2643 1:<FETCH> CPI: 1.61
+2643 1:<FETCH> Int Conditional Branches: 342
+2643 1:<FETCH> Jump and Link: 23
+2643 1:<FETCH> Jump Register: 19
+2643 1:<FETCH> Number of fp instructions: 2
+2643 1:<FETCH> Number of loads: 274
+2643 1:<FETCH> Number of syscall emulated loads: 59
+2643 1:<FETCH> Number of stores: 103
+2643 1:<FETCH> Number of syscall emulated stores: 47
+2643 1:<FETCH> Number of load interlocks: 990
+2643 1:<FETCH> 

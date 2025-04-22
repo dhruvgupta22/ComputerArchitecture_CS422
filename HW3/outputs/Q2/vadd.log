@@ -1,0 +1,16 @@
+14071 1:<FETCH> 
+14071 1:<FETCH> ************************************************************
+14071 1:<FETCH> 
+14071 1:<FETCH> Number of instructions: 7130
+14071 1:<FETCH> Number of simulated cycles: 14071
+14071 1:<FETCH> CPI: 1.97
+14071 1:<FETCH> Int Conditional Branches: 768
+14071 1:<FETCH> Jump and Link: 27
+14071 1:<FETCH> Jump Register: 25
+14071 1:<FETCH> Number of fp instructions: 2
+14071 1:<FETCH> Number of loads: 361
+14071 1:<FETCH> Number of syscall emulated loads: 85
+14071 1:<FETCH> Number of stores: 1142
+14071 1:<FETCH> Number of syscall emulated stores: 45
+14071 1:<FETCH> Number of load interlocks: 6111
+14071 1:<FETCH> 

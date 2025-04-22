@@ -1,0 +1,16 @@
+8551 1:<FETCH> 
+8551 1:<FETCH> ************************************************************
+8551 1:<FETCH> 
+8551 1:<FETCH> Number of instructions: 7454
+8551 1:<FETCH> Number of simulated cycles: 8551
+8551 1:<FETCH> CPI: 1.15
+8551 1:<FETCH> Int Conditional Branches: 1327
+8551 1:<FETCH> Jump and Link: 105
+8551 1:<FETCH> Jump Register: 114
+8551 1:<FETCH> Number of fp instructions: 28
+8551 1:<FETCH> Number of loads: 1205
+8551 1:<FETCH> Number of syscall emulated loads: 83
+8551 1:<FETCH> Number of stores: 714
+8551 1:<FETCH> Number of syscall emulated stores: 45
+8551 1:<FETCH> Number of load interlocks: 1083
+8551 1:<FETCH> 

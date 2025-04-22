@@ -1,0 +1,16 @@
+12554 1:<FETCH> 
+12554 1:<FETCH> ************************************************************
+12554 1:<FETCH> 
+12554 1:<FETCH> Number of instructions: 7454
+12554 1:<FETCH> Number of simulated cycles: 12554
+12554 1:<FETCH> CPI: 1.68
+12554 1:<FETCH> Int Conditional Branches: 1327
+12554 1:<FETCH> Jump and Link: 105
+12554 1:<FETCH> Jump Register: 114
+12554 1:<FETCH> Number of fp instructions: 28
+12554 1:<FETCH> Number of loads: 1205
+12554 1:<FETCH> Number of syscall emulated loads: 83
+12554 1:<FETCH> Number of stores: 714
+12554 1:<FETCH> Number of syscall emulated stores: 45
+12554 1:<FETCH> Number of load interlocks: 3573
+12554 1:<FETCH> 

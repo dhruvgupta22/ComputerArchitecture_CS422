@@ -1,0 +1,16 @@
+9033 1:<FETCH> 
+9033 1:<FETCH> ************************************************************
+9033 1:<FETCH> 
+9033 1:<FETCH> Number of instructions: 7454
+9033 1:<FETCH> Number of simulated cycles: 9033
+9033 1:<FETCH> CPI: 1.21
+9033 1:<FETCH> Int Conditional Branches: 1327
+9033 1:<FETCH> Jump and Link: 105
+9033 1:<FETCH> Jump Register: 114
+9033 1:<FETCH> Number of fp instructions: 28
+9033 1:<FETCH> Number of loads: 1205
+9033 1:<FETCH> Number of syscall emulated loads: 83
+9033 1:<FETCH> Number of stores: 714
+9033 1:<FETCH> Number of syscall emulated stores: 45
+9033 1:<FETCH> Number of load interlocks: 1565
+9033 1:<FETCH> 

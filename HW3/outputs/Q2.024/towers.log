@@ -1,0 +1,16 @@
+91961 1:<FETCH> 
+91961 1:<FETCH> ************************************************************
+91961 1:<FETCH> 
+91961 1:<FETCH> Number of instructions: 80652
+91961 1:<FETCH> Number of simulated cycles: 91961
+91961 1:<FETCH> CPI: 1.14
+91961 1:<FETCH> Int Conditional Branches: 17002
+91961 1:<FETCH> Jump and Link: 1025
+91961 1:<FETCH> Jump Register: 1211
+91961 1:<FETCH> Number of fp instructions: 126
+91961 1:<FETCH> Number of loads: 14537
+91961 1:<FETCH> Number of syscall emulated loads: 2063
+91961 1:<FETCH> Number of stores: 6976
+91961 1:<FETCH> Number of syscall emulated stores: 49
+91961 1:<FETCH> Number of load interlocks: 11109
+91961 1:<FETCH> 

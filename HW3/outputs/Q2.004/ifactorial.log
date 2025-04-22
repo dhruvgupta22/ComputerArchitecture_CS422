@@ -1,0 +1,16 @@
+3768 1:<FETCH> 
+3768 1:<FETCH> ************************************************************
+3768 1:<FETCH> 
+3768 1:<FETCH> Number of instructions: 2294
+3768 1:<FETCH> Number of simulated cycles: 3768
+3768 1:<FETCH> CPI: 1.64
+3768 1:<FETCH> Int Conditional Branches: 466
+3768 1:<FETCH> Jump and Link: 29
+3768 1:<FETCH> Jump Register: 27
+3768 1:<FETCH> Number of fp instructions: 2
+3768 1:<FETCH> Number of loads: 329
+3768 1:<FETCH> Number of syscall emulated loads: 70
+3768 1:<FETCH> Number of stores: 133
+3768 1:<FETCH> Number of syscall emulated stores: 57
+3768 1:<FETCH> Number of load interlocks: 1460
+3768 1:<FETCH> 

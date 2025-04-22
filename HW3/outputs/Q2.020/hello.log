@@ -1,0 +1,16 @@
+2047 1:<FETCH> 
+2047 1:<FETCH> ************************************************************
+2047 1:<FETCH> 
+2047 1:<FETCH> Number of instructions: 1639
+2047 1:<FETCH> Number of simulated cycles: 2047
+2047 1:<FETCH> CPI: 1.25
+2047 1:<FETCH> Int Conditional Branches: 342
+2047 1:<FETCH> Jump and Link: 23
+2047 1:<FETCH> Jump Register: 19
+2047 1:<FETCH> Number of fp instructions: 2
+2047 1:<FETCH> Number of loads: 274
+2047 1:<FETCH> Number of syscall emulated loads: 59
+2047 1:<FETCH> Number of stores: 103
+2047 1:<FETCH> Number of syscall emulated stores: 47
+2047 1:<FETCH> Number of load interlocks: 394
+2047 1:<FETCH> 

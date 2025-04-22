@@ -1,0 +1,16 @@
+113977 1:<FETCH> 
+113977 1:<FETCH> ************************************************************
+113977 1:<FETCH> 
+113977 1:<FETCH> Number of instructions: 80652
+113977 1:<FETCH> Number of simulated cycles: 113977
+113977 1:<FETCH> CPI: 1.41
+113977 1:<FETCH> Int Conditional Branches: 17002
+113977 1:<FETCH> Jump and Link: 1025
+113977 1:<FETCH> Jump Register: 1211
+113977 1:<FETCH> Number of fp instructions: 126
+113977 1:<FETCH> Number of loads: 14537
+113977 1:<FETCH> Number of syscall emulated loads: 2063
+113977 1:<FETCH> Number of stores: 6976
+113977 1:<FETCH> Number of syscall emulated stores: 49
+113977 1:<FETCH> Number of load interlocks: 33125
+113977 1:<FETCH> 

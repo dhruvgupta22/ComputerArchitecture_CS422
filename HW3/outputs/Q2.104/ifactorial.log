@@ -1,0 +1,16 @@
+2621 1:<FETCH> 
+2621 1:<FETCH> ************************************************************
+2621 1:<FETCH> 
+2621 1:<FETCH> Number of instructions: 2294
+2621 1:<FETCH> Number of simulated cycles: 2621
+2621 1:<FETCH> CPI: 1.14
+2621 1:<FETCH> Int Conditional Branches: 466
+2621 1:<FETCH> Jump and Link: 29
+2621 1:<FETCH> Jump Register: 27
+2621 1:<FETCH> Number of fp instructions: 2
+2621 1:<FETCH> Number of loads: 329
+2621 1:<FETCH> Number of syscall emulated loads: 70
+2621 1:<FETCH> Number of stores: 133
+2621 1:<FETCH> Number of syscall emulated stores: 57
+2621 1:<FETCH> Number of load interlocks: 313
+2621 1:<FETCH> 

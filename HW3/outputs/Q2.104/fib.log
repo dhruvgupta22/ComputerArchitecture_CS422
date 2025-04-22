@@ -1,0 +1,16 @@
+53101 1:<FETCH> 
+53101 1:<FETCH> ************************************************************
+53101 1:<FETCH> 
+53101 1:<FETCH> Number of instructions: 44780
+53101 1:<FETCH> Number of simulated cycles: 53101
+53101 1:<FETCH> CPI: 1.19
+53101 1:<FETCH> Int Conditional Branches: 3747
+53101 1:<FETCH> Jump and Link: 2513
+53101 1:<FETCH> Jump Register: 2522
+53101 1:<FETCH> Number of fp instructions: 28
+53101 1:<FETCH> Number of loads: 6022
+53101 1:<FETCH> Number of syscall emulated loads: 81
+53101 1:<FETCH> Number of stores: 7939
+53101 1:<FETCH> Number of syscall emulated stores: 43
+53101 1:<FETCH> Number of load interlocks: 8307
+53101 1:<FETCH> 

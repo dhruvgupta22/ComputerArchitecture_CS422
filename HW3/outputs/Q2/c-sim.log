@@ -1,0 +1,16 @@
+3281 1:<FETCH> 
+3281 1:<FETCH> ************************************************************
+3281 1:<FETCH> 
+3281 1:<FETCH> Number of instructions: 1826
+3281 1:<FETCH> Number of simulated cycles: 3281
+3281 1:<FETCH> CPI: 1.80
+3281 1:<FETCH> Int Conditional Branches: 372
+3281 1:<FETCH> Jump and Link: 26
+3281 1:<FETCH> Jump Register: 24
+3281 1:<FETCH> Number of fp instructions: 2
+3281 1:<FETCH> Number of loads: 282
+3281 1:<FETCH> Number of syscall emulated loads: 54
+3281 1:<FETCH> Number of stores: 109
+3281 1:<FETCH> Number of syscall emulated stores: 49
+3281 1:<FETCH> Number of load interlocks: 1023
+3281 1:<FETCH> 

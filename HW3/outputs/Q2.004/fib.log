@@ -1,0 +1,16 @@
+63260 1:<FETCH> 
+63260 1:<FETCH> ************************************************************
+63260 1:<FETCH> 
+63260 1:<FETCH> Number of instructions: 44780
+63260 1:<FETCH> Number of simulated cycles: 63260
+63260 1:<FETCH> CPI: 1.41
+63260 1:<FETCH> Int Conditional Branches: 3747
+63260 1:<FETCH> Jump and Link: 2513
+63260 1:<FETCH> Jump Register: 2522
+63260 1:<FETCH> Number of fp instructions: 28
+63260 1:<FETCH> Number of loads: 6022
+63260 1:<FETCH> Number of syscall emulated loads: 81
+63260 1:<FETCH> Number of stores: 7939
+63260 1:<FETCH> Number of syscall emulated stores: 43
+63260 1:<FETCH> Number of load interlocks: 18466
+63260 1:<FETCH> 

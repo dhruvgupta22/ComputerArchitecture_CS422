@@ -1,0 +1,16 @@
+10021 1:<FETCH> 
+10021 1:<FETCH> ************************************************************
+10021 1:<FETCH> 
+10021 1:<FETCH> Number of instructions: 7130
+10021 1:<FETCH> Number of simulated cycles: 10021
+10021 1:<FETCH> CPI: 1.41
+10021 1:<FETCH> Int Conditional Branches: 768
+10021 1:<FETCH> Jump and Link: 27
+10021 1:<FETCH> Jump Register: 25
+10021 1:<FETCH> Number of fp instructions: 2
+10021 1:<FETCH> Number of loads: 361
+10021 1:<FETCH> Number of syscall emulated loads: 85
+10021 1:<FETCH> Number of stores: 1142
+10021 1:<FETCH> Number of syscall emulated stores: 45
+10021 1:<FETCH> Number of load interlocks: 2877
+10021 1:<FETCH> 

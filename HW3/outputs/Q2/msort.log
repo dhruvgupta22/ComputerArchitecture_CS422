@@ -1,0 +1,16 @@
+31775 1:<FETCH> 
+31775 1:<FETCH> ************************************************************
+31775 1:<FETCH> 
+31775 1:<FETCH> Number of instructions: 17104
+31775 1:<FETCH> Number of simulated cycles: 31775
+31775 1:<FETCH> CPI: 1.86
+31775 1:<FETCH> Int Conditional Branches: 3121
+31775 1:<FETCH> Jump and Link: 26
+31775 1:<FETCH> Jump Register: 23
+31775 1:<FETCH> Number of fp instructions: 2
+31775 1:<FETCH> Number of loads: 1754
+31775 1:<FETCH> Number of syscall emulated loads: 69
+31775 1:<FETCH> Number of stores: 890
+31775 1:<FETCH> Number of syscall emulated stores: 47
+31775 1:<FETCH> Number of load interlocks: 11012
+31775 1:<FETCH> 

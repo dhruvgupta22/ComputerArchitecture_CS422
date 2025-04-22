@@ -1,0 +1,16 @@
+51187 1:<FETCH> 
+51187 1:<FETCH> ************************************************************
+51187 1:<FETCH> 
+51187 1:<FETCH> Number of instructions: 44780
+51187 1:<FETCH> Number of simulated cycles: 51187
+51187 1:<FETCH> CPI: 1.14
+51187 1:<FETCH> Int Conditional Branches: 3747
+51187 1:<FETCH> Jump and Link: 2513
+51187 1:<FETCH> Jump Register: 2522
+51187 1:<FETCH> Number of fp instructions: 28
+51187 1:<FETCH> Number of loads: 6022
+51187 1:<FETCH> Number of syscall emulated loads: 81
+51187 1:<FETCH> Number of stores: 7939
+51187 1:<FETCH> Number of syscall emulated stores: 43
+51187 1:<FETCH> Number of load interlocks: 6393
+51187 1:<FETCH> 

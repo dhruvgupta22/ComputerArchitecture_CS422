@@ -1,0 +1,16 @@
+3043 1:<FETCH> 
+3043 1:<FETCH> ************************************************************
+3043 1:<FETCH> 
+3043 1:<FETCH> Number of instructions: 2408
+3043 1:<FETCH> Number of simulated cycles: 3043
+3043 1:<FETCH> CPI: 1.26
+3043 1:<FETCH> Int Conditional Branches: 466
+3043 1:<FETCH> Jump and Link: 38
+3043 1:<FETCH> Jump Register: 36
+3043 1:<FETCH> Number of fp instructions: 2
+3043 1:<FETCH> Number of loads: 349
+3043 1:<FETCH> Number of syscall emulated loads: 68
+3043 1:<FETCH> Number of stores: 163
+3043 1:<FETCH> Number of syscall emulated stores: 55
+3043 1:<FETCH> Number of load interlocks: 621
+3043 1:<FETCH> 

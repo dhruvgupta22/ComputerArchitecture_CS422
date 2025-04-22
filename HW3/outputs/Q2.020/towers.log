@@ -1,0 +1,16 @@
+92024 1:<FETCH> 
+92024 1:<FETCH> ************************************************************
+92024 1:<FETCH> 
+92024 1:<FETCH> Number of instructions: 80652
+92024 1:<FETCH> Number of simulated cycles: 92024
+92024 1:<FETCH> CPI: 1.14
+92024 1:<FETCH> Int Conditional Branches: 17002
+92024 1:<FETCH> Jump and Link: 1025
+92024 1:<FETCH> Jump Register: 1211
+92024 1:<FETCH> Number of fp instructions: 126
+92024 1:<FETCH> Number of loads: 14537
+92024 1:<FETCH> Number of syscall emulated loads: 2063
+92024 1:<FETCH> Number of stores: 6976
+92024 1:<FETCH> Number of syscall emulated stores: 49
+92024 1:<FETCH> Number of load interlocks: 11172
+92024 1:<FETCH> 

@@ -1,0 +1,16 @@
+10022 1:<FETCH> 
+10022 1:<FETCH> ************************************************************
+10022 1:<FETCH> 
+10022 1:<FETCH> Number of instructions: 7130
+10022 1:<FETCH> Number of simulated cycles: 10022
+10022 1:<FETCH> CPI: 1.41
+10022 1:<FETCH> Int Conditional Branches: 768
+10022 1:<FETCH> Jump and Link: 27
+10022 1:<FETCH> Jump Register: 25
+10022 1:<FETCH> Number of fp instructions: 2
+10022 1:<FETCH> Number of loads: 361
+10022 1:<FETCH> Number of syscall emulated loads: 85
+10022 1:<FETCH> Number of stores: 1142
+10022 1:<FETCH> Number of syscall emulated stores: 45
+10022 1:<FETCH> Number of load interlocks: 2878
+10022 1:<FETCH> 

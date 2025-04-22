@@ -1,0 +1,16 @@
+3225 1:<FETCH> 
+3225 1:<FETCH> ************************************************************
+3225 1:<FETCH> 
+3225 1:<FETCH> Number of instructions: 1865
+3225 1:<FETCH> Number of simulated cycles: 3225
+3225 1:<FETCH> CPI: 1.73
+3225 1:<FETCH> Int Conditional Branches: 354
+3225 1:<FETCH> Jump and Link: 29
+3225 1:<FETCH> Jump Register: 28
+3225 1:<FETCH> Number of fp instructions: 2
+3225 1:<FETCH> Number of loads: 324
+3225 1:<FETCH> Number of syscall emulated loads: 52
+3225 1:<FETCH> Number of stores: 168
+3225 1:<FETCH> Number of syscall emulated stores: 49
+3225 1:<FETCH> Number of load interlocks: 937
+3225 1:<FETCH> 

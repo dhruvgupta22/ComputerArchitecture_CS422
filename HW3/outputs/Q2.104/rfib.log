@@ -1,0 +1,16 @@
+30172 1:<FETCH> 
+30172 1:<FETCH> ************************************************************
+30172 1:<FETCH> 
+30172 1:<FETCH> Number of instructions: 25541
+30172 1:<FETCH> Number of simulated cycles: 30172
+30172 1:<FETCH> CPI: 1.18
+30172 1:<FETCH> Int Conditional Branches: 2442
+30172 1:<FETCH> Jump and Link: 1297
+30172 1:<FETCH> Jump Register: 1306
+30172 1:<FETCH> Number of fp instructions: 28
+30172 1:<FETCH> Number of loads: 3613
+30172 1:<FETCH> Number of syscall emulated loads: 83
+30172 1:<FETCH> Number of stores: 4326
+30172 1:<FETCH> Number of syscall emulated stores: 45
+30172 1:<FETCH> Number of load interlocks: 4617
+30172 1:<FETCH> 

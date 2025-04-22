@@ -1,0 +1,16 @@
+3482 1:<FETCH> 
+3482 1:<FETCH> ************************************************************
+3482 1:<FETCH> 
+3482 1:<FETCH> Number of instructions: 1996
+3482 1:<FETCH> Number of simulated cycles: 3482
+3482 1:<FETCH> CPI: 1.74
+3482 1:<FETCH> Int Conditional Branches: 411
+3482 1:<FETCH> Jump and Link: 31
+3482 1:<FETCH> Jump Register: 29
+3482 1:<FETCH> Number of fp instructions: 2
+3482 1:<FETCH> Number of loads: 319
+3482 1:<FETCH> Number of syscall emulated loads: 56
+3482 1:<FETCH> Number of stores: 130
+3482 1:<FETCH> Number of syscall emulated stores: 45
+3482 1:<FETCH> Number of load interlocks: 1004
+3482 1:<FETCH> 

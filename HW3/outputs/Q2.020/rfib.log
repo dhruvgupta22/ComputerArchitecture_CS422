@@ -1,0 +1,16 @@
+29373 1:<FETCH> 
+29373 1:<FETCH> ************************************************************
+29373 1:<FETCH> 
+29373 1:<FETCH> Number of instructions: 25541
+29373 1:<FETCH> Number of simulated cycles: 29373
+29373 1:<FETCH> CPI: 1.15
+29373 1:<FETCH> Int Conditional Branches: 2442
+29373 1:<FETCH> Jump and Link: 1297
+29373 1:<FETCH> Jump Register: 1306
+29373 1:<FETCH> Number of fp instructions: 28
+29373 1:<FETCH> Number of loads: 3613
+29373 1:<FETCH> Number of syscall emulated loads: 83
+29373 1:<FETCH> Number of stores: 4326
+29373 1:<FETCH> Number of syscall emulated stores: 45
+29373 1:<FETCH> Number of load interlocks: 3818
+29373 1:<FETCH> 

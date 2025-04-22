@@ -1,0 +1,16 @@
+92812 1:<FETCH> 
+92812 1:<FETCH> ************************************************************
+92812 1:<FETCH> 
+92812 1:<FETCH> Number of instructions: 80652
+92812 1:<FETCH> Number of simulated cycles: 92812
+92812 1:<FETCH> CPI: 1.15
+92812 1:<FETCH> Int Conditional Branches: 17002
+92812 1:<FETCH> Jump and Link: 1025
+92812 1:<FETCH> Jump Register: 1211
+92812 1:<FETCH> Number of fp instructions: 126
+92812 1:<FETCH> Number of loads: 14537
+92812 1:<FETCH> Number of syscall emulated loads: 2063
+92812 1:<FETCH> Number of stores: 6976
+92812 1:<FETCH> Number of syscall emulated stores: 49
+92812 1:<FETCH> Number of load interlocks: 11960
+92812 1:<FETCH> 

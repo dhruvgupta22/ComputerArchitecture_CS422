@@ -1,0 +1,16 @@
+22817 1:<FETCH> 
+22817 1:<FETCH> ************************************************************
+22817 1:<FETCH> 
+22817 1:<FETCH> Number of instructions: 17104
+22817 1:<FETCH> Number of simulated cycles: 22817
+22817 1:<FETCH> CPI: 1.33
+22817 1:<FETCH> Int Conditional Branches: 3121
+22817 1:<FETCH> Jump and Link: 26
+22817 1:<FETCH> Jump Register: 23
+22817 1:<FETCH> Number of fp instructions: 2
+22817 1:<FETCH> Number of loads: 1754
+22817 1:<FETCH> Number of syscall emulated loads: 69
+22817 1:<FETCH> Number of stores: 890
+22817 1:<FETCH> Number of syscall emulated stores: 47
+22817 1:<FETCH> Number of load interlocks: 5699
+22817 1:<FETCH> 

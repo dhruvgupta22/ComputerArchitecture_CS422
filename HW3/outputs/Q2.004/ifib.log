@@ -1,0 +1,16 @@
+11462 1:<FETCH> 
+11462 1:<FETCH> ************************************************************
+11462 1:<FETCH> 
+11462 1:<FETCH> Number of instructions: 7454
+11462 1:<FETCH> Number of simulated cycles: 11462
+11462 1:<FETCH> CPI: 1.54
+11462 1:<FETCH> Int Conditional Branches: 1327
+11462 1:<FETCH> Jump and Link: 105
+11462 1:<FETCH> Jump Register: 114
+11462 1:<FETCH> Number of fp instructions: 28
+11462 1:<FETCH> Number of loads: 1205
+11462 1:<FETCH> Number of syscall emulated loads: 83
+11462 1:<FETCH> Number of stores: 714
+11462 1:<FETCH> Number of syscall emulated stores: 45
+11462 1:<FETCH> Number of load interlocks: 3994
+11462 1:<FETCH> 
