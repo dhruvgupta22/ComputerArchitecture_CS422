@@ -1,0 +1,15 @@
+11565 0:<FETCH> 
+11565 0:<FETCH> ************************************************************
+11565 0:<FETCH> 
+11565 0:<FETCH> Number of instructions: 2313
+11565 0:<FETCH> Number of simulated cycles: 11565
+11565 0:<FETCH> CPI: 5.00
+11565 0:<FETCH> Int Conditional Branches: 453
+11565 0:<FETCH> Jump and Link: 35
+11565 0:<FETCH> Jump Register: 32
+11565 0:<FETCH> Number of fp instructions: 2
+11565 0:<FETCH> Number of loads: 420
+11565 0:<FETCH> Number of syscall emulated loads: 102
+11565 0:<FETCH> Number of stores: 176
+11565 0:<FETCH> Number of syscall emulated stores: 61
+11565 0:<FETCH> 

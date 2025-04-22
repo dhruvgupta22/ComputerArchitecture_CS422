@@ -1,0 +1,15 @@
+63107 1:<FETCH> 
+63107 1:<FETCH> ************************************************************
+63107 1:<FETCH> 
+63107 1:<FETCH> Number of instructions: 44780
+63107 1:<FETCH> Number of simulated cycles: 63107
+63107 1:<FETCH> CPI: 1.41
+63107 1:<FETCH> Int Conditional Branches: 3747
+63107 1:<FETCH> Jump and Link: 2513
+63107 1:<FETCH> Jump Register: 2522
+63107 1:<FETCH> Number of fp instructions: 28
+63107 1:<FETCH> Number of loads: 6022
+63107 1:<FETCH> Number of syscall emulated loads: 81
+63107 1:<FETCH> Number of stores: 7939
+63107 1:<FETCH> Number of syscall emulated stores: 43
+63107 1:<FETCH> 

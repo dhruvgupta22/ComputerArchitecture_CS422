@@ -1,0 +1,15 @@
+72640 1:<FETCH> 
+72640 1:<FETCH> ************************************************************
+72640 1:<FETCH> 
+72640 1:<FETCH> Number of instructions: 44780
+72640 1:<FETCH> Number of simulated cycles: 72640
+72640 1:<FETCH> CPI: 1.62
+72640 1:<FETCH> Int Conditional Branches: 3747
+72640 1:<FETCH> Jump and Link: 2513
+72640 1:<FETCH> Jump Register: 2522
+72640 1:<FETCH> Number of fp instructions: 28
+72640 1:<FETCH> Number of loads: 6022
+72640 1:<FETCH> Number of syscall emulated loads: 81
+72640 1:<FETCH> Number of stores: 7939
+72640 1:<FETCH> Number of syscall emulated stores: 43
+72640 1:<FETCH> 

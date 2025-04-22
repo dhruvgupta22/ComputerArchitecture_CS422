@@ -1,0 +1,15 @@
+3266 1:<FETCH> 
+3266 1:<FETCH> ************************************************************
+3266 1:<FETCH> 
+3266 1:<FETCH> Number of instructions: 1826
+3266 1:<FETCH> Number of simulated cycles: 3266
+3266 1:<FETCH> CPI: 1.79
+3266 1:<FETCH> Int Conditional Branches: 372
+3266 1:<FETCH> Jump and Link: 26
+3266 1:<FETCH> Jump Register: 24
+3266 1:<FETCH> Number of fp instructions: 2
+3266 1:<FETCH> Number of loads: 282
+3266 1:<FETCH> Number of syscall emulated loads: 54
+3266 1:<FETCH> Number of stores: 109
+3266 1:<FETCH> Number of syscall emulated stores: 49
+3266 1:<FETCH> 

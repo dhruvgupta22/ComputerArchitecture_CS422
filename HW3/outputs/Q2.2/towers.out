@@ -1,0 +1,15 @@
+112777 1:<FETCH> 
+112777 1:<FETCH> ************************************************************
+112777 1:<FETCH> 
+112777 1:<FETCH> Number of instructions: 80652
+112777 1:<FETCH> Number of simulated cycles: 112777
+112777 1:<FETCH> CPI: 1.40
+112777 1:<FETCH> Int Conditional Branches: 17002
+112777 1:<FETCH> Jump and Link: 1025
+112777 1:<FETCH> Jump Register: 1211
+112777 1:<FETCH> Number of fp instructions: 126
+112777 1:<FETCH> Number of loads: 14537
+112777 1:<FETCH> Number of syscall emulated loads: 2063
+112777 1:<FETCH> Number of stores: 6976
+112777 1:<FETCH> Number of syscall emulated stores: 49
+112777 1:<FETCH> 
